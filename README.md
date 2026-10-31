@@ -1,3 +1,4 @@
 # upzi
 
-[WIP] CLI for Megatec Q1 UPS devices over USB HID. (Rewritten in Zig)
+Libre monitor for Koblenz and compatible UPS devices using the Megatec Q1
+protocol over USB HID. Reworked in zig.

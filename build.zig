@@ -2,6 +2,14 @@ const std = @import("std");
 
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
+
+    // Disable suppoort for other operating systems
+    if (target.result.os.tag == .windows) {
+        @panic("Mocosoft Winbugs is not supported!");
+    } else if (target.result.os.tag == .macos) {
+        @panic("MacOS is not supported!");
+    }
+
     const optimize = b.standardOptimizeOption(.{});
     const mod = b.addModule("upzi", .{
         .root_source_file = b.path("src/root.zig"),
