@@ -2,6 +2,7 @@
 const std = @import("std");
 const Io = std.Io;
 const posix = std.posix;
+const linux = std.os.linux;
 
 /// This is a documentation comment to explain the `printAnotherMessage` function below.
 ///
@@ -12,13 +13,11 @@ pub fn printAnotherMessage(writer: *Io.Writer) Io.Writer.Error!void {
 
 pub const PACKET_SIZE = 8;
 
-/// Open a new /dev/hidrawN device provided optionally.
-pub fn openDevice(path: ?[:0]const u8) !posix.fd_t {
-    const hidraw_device = path orelse "/dev/hidraw0";
-
+/// Open a new /dev/hidrawN device provided.
+pub fn openDevice(path: [:0]const u8) !posix.fd_t {
     const result = try posix.openat(
         posix.AT.FDCWD,
-        hidraw_device,
+        path,
         .{
             .ACCMODE = .RDWR,
             .NONBLOCK = true,
@@ -29,16 +28,49 @@ pub fn openDevice(path: ?[:0]const u8) !posix.fd_t {
     return result;
 }
 
+/// Close a /dev/hidrawN device provided. If the caller gets an EINTR, DO NOT
+/// ATTEMPT TO CLOSE IT AGAIN.
+pub fn closeDevice(fd: i32) !usize {
+    const result = linux.close(fd);
+
+    const err = linux.errno(result);
+
+    if (err != .SUCCESS) {
+        switch (err) {
+            .BADF => {
+                return error.BadFileDescriptor;
+            },
+            .IO => {
+                return error.BadIO;
+            },
+            .INTR => {
+                return error.Interrupted;
+            },
+            else => {
+                return error.Unhandled;
+            },
+        }
+    }
+
+    return result;
+}
+
+// Tests begin here
+
 test "open a hidraw device file descriptor" {
     const result = try openDevice("/dev/hidraw0");
 
     try std.testing.expect(result == 3);
 }
 
-pub fn add(a: i32, b: i32) i32 {
-    return a + b;
+test "openDevice fails when an unknown file descriptor is provided" {
+    const result = openDevice("/dev/hidrawNaN");
+
+    try std.testing.expectError(error.FileNotFound, result);
 }
 
-test "basic add functionality" {
-    try std.testing.expect(add(3, 7) == 10);
+test "closeDevice fails with an invalid file descriptor" {
+    const fake_fd: i32 = 9999;
+
+    try std.testing.expectError(error.BadFileDescriptor, closeDevice(fake_fd));
 }
