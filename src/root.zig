@@ -4,14 +4,15 @@ const Io = std.Io;
 const posix = std.posix;
 const linux = std.os.linux;
 
-/// This is a documentation comment to explain the `printAnotherMessage` function below.
-///
-/// Accepting an `Io.Writer` instance is a handy way to write reusable code.
-pub fn printAnotherMessage(writer: *Io.Writer) Io.Writer.Error!void {
-    try writer.print("Run `zig build test` to run the tests.\n", .{});
-}
-
 pub const PACKET_SIZE = 8;
+
+/// Represents a response returned from the UPS protocol.
+const MegatecResponse = struct {
+    /// The octect vector response itself.
+    packet: [8]u8,
+    /// The lenght of the octect vector.
+    len: usize,
+};
 
 /// Open a new /dev/hidrawN device provided.
 pub fn openDevice(path: [:0]const u8) !posix.fd_t {
@@ -95,6 +96,46 @@ pub fn writePacket(fd: i32, first_byte: u8) !usize {
     return result;
 }
 
+/// Read up to 8 bytes of the endpoint interrupt IN. Return a packet or null if
+/// no data was found.
+pub fn readPacket(fd: i32, buffer: *[8]u8) !?MegatecResponse {
+    var result = linux.read(fd, buffer, PACKET_SIZE);
+
+    var err = linux.errno(result);
+
+    while (err != .SUCCESS) {
+        switch (err) {
+            .INTR => {
+                // Interrupted, retry
+                result = linux.read(fd, buffer, PACKET_SIZE);
+                err = linux.errno(result);
+                continue;
+            },
+            .AGAIN => {
+                // No data yet
+                return null;
+            },
+            .BADF => {
+                return error.BadFileDescriptor;
+            },
+            else => {
+                return error.Unhandled;
+            },
+        }
+    }
+
+    if (result == 0) {
+        return error.EOF;
+    }
+
+    const response = MegatecResponse{
+        .packet = buffer.*,
+        .len = result,
+    };
+
+    return response;
+}
+
 // Tests begin here
 
 test "open a hidraw device file descriptor" {
@@ -127,6 +168,17 @@ test "writePacket fails if trying to write to a bad file descriptor" {
         writePacket(
             -1,
             'Q',
+        ),
+    );
+}
+
+test "readPacket fails if trying to read a bad file descriptor" {
+    var buffer: [8]u8 = undefined;
+    try std.testing.expectError(
+        error.BadFileDescriptor,
+        readPacket(
+            -1,
+            &buffer,
         ),
     );
 }
