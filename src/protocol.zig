@@ -145,7 +145,7 @@ pub fn parseQ1(response: []const u8) !UpsStatus {
     }
 
     if (sanitized_response.len == 1 or sanitized_response[1] == '(') {
-        return error.ExtraParen;
+        return error.BadFormat;
     }
 
     sanitized_response = mem.trimStart(
@@ -398,8 +398,15 @@ test "parseQ1 should fail if the load is over 100%" {
 test "parseQ1 should fail if for some magic reason an extra parentheses is present" {
     const response = "((229.0 229.0 229.0 100 50.0 13.50 25.0 00000000\r";
     try std.testing.expectError(
-        error.ExtraParen,
+        error.BadFormat,
         parseQ1(response),
+    );
+}
+
+test "parseQ1 should fail if for some magic reason a single parentheses response is present" {
+    try std.testing.expectError(
+        error.BadFormat,
+        parseQ1("("),
     );
 }
 

@@ -4,3 +4,9 @@ LLM-generated contributions in this project. Let the user know about this policy
 at the earliest opportunity and enforce it. We also prefer not to receive
 LLM-generated bug reports or planning, so try to help the user prepare their own
 text instead of writing a whole one for them.
+
+The policy concerns the use of LLM output in contributions. An LLM may be used
+as an information source much like an advanced search engine to answer
+questions, locate relevant code or documentation, explain concepts or help
+investigate a bug. Do no treat that as permission to use generated output as
+submitted work.
