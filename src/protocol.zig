@@ -117,6 +117,17 @@ pub fn sendCommand(fd: i32, cmd_str: []const u8) !void {
     }
 }
 
+/// Helper function to validate floats inside a response string.
+fn validUpsFloat(val: []const u8) !f32 {
+    const result = try fmt.parseFloat(f32, val);
+
+    if (!std.math.isFinite(result)) {
+        return error.InvalidUPSFloat;
+    }
+
+    return result;
+}
+
 /// Parse a raw Q1 response into a `UpsStatus` struct.
 pub fn parseQ1(response: []const u8) !UpsStatus {
     var sanitized_response = mem.trimEnd(
@@ -131,6 +142,10 @@ pub fn parseQ1(response: []const u8) !UpsStatus {
 
     if (sanitized_response[0] != '(') {
         return error.MissingLeadingByte;
+    }
+
+    if (sanitized_response.len == 1 or sanitized_response[1] == '(') {
+        return error.ExtraParen;
     }
 
     sanitized_response = mem.trimStart(
@@ -178,13 +193,13 @@ pub fn parseQ1(response: []const u8) !UpsStatus {
     }
 
     return UpsStatus{
-        .input_voltage = try fmt.parseFloat(f32, input_v),
-        .fault_voltage = try fmt.parseFloat(f32, fault_v),
-        .output_voltage = try fmt.parseFloat(f32, output_v),
+        .input_voltage = try validUpsFloat(input_v),
+        .fault_voltage = try validUpsFloat(fault_v),
+        .output_voltage = try validUpsFloat(output_v),
         .load_percent = load_percent,
-        .frequency = try fmt.parseFloat(f32, freq),
-        .battery_voltage = try fmt.parseFloat(f32, bat_v),
-        .temperature = try fmt.parseFloat(f32, temp),
+        .frequency = try validUpsFloat(freq),
+        .battery_voltage = try validUpsFloat(bat_v),
+        .temperature = try validUpsFloat(temp),
 
         // NOTE: true and false carry different meanings in the protocol itself
         // line_interactive and beeper on are descriptive. The rest raise some
@@ -380,6 +395,18 @@ test "parseQ1 should fail if the load is over 100%" {
     );
 }
 
-// TODO: Tests for
-// - Extra '(' on leading chars
-// - ParseFloat accepts 'nan' and 'inf' (for some reason inf I know, but nan?)
+test "parseQ1 should fail if for some magic reason an extra parentheses is present" {
+    const response = "((229.0 229.0 229.0 100 50.0 13.50 25.0 00000000\r";
+    try std.testing.expectError(
+        error.ExtraParen,
+        parseQ1(response),
+    );
+}
+
+test "parseQ1 should fail if any float is 'nan' or 'inf'" {
+    const response = "(nan inf 229.0 100 50.0 13.50 25.0 00000000\r";
+    try std.testing.expectError(
+        error.InvalidUPSFloat,
+        parseQ1(response),
+    );
+}
