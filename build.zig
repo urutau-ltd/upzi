@@ -1,4 +1,5 @@
 const std = @import("std");
+const zon = @import("build.zig.zon");
 
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
@@ -9,6 +10,9 @@ pub fn build(b: *std.Build) void {
     } else if (target.result.os.tag == .macos) {
         @panic("MacOS is not supported!");
     }
+
+    const build_options = b.addOptions();
+    build_options.addOption([]const u8, "version", zon.version);
 
     const optimize = b.standardOptimizeOption(.{});
     const mod = b.addModule("upzi", .{
@@ -27,6 +31,8 @@ pub fn build(b: *std.Build) void {
             },
         }),
     });
+
+    exe.root_module.addOptions("build_options", build_options);
 
     b.installArtifact(exe);
 
