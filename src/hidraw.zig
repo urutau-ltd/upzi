@@ -1,6 +1,10 @@
 const std = @import("std");
+const mem = std.mem;
 const posix = std.posix;
+const fmt = std.fmt;
 const linux = std.os.linux;
+const testing = std.testing;
+const Io = std.Io;
 
 pub const PACKET_SIZE = 8;
 
@@ -134,18 +138,71 @@ pub fn readPacket(fd: i32, buffer: *[8]u8) !?MegatecResponse {
     return response;
 }
 
+/// Scan for mounted devices and check if any of them is a compatible UPS
+/// for this implementation. The function returns a zero-terminated slice with
+/// the path for the UPS device at `/dev/hidrawN`.
+///
+/// The caller must provide an allocator and an Io interface. If the function
+/// fails to autodiscover a device it will return a `error.DeviceNotFound` which
+/// the caller should handle. Right now the discovery capabilities are very
+/// limited and it only searches for `INNO TECH` present in the device name
+/// and a specific HID ID. Support for more devices is always welcome.
+pub fn discoverUPS(allocator: mem.Allocator, io: std.Io) ![:0]u8 {
+    var i: usize = 0;
+
+    while (i < 32) : (i += 1) {
+        const dev_path = try fmt.allocPrint(
+            allocator,
+            "/dev/hidraw{d}",
+            .{i},
+        );
+
+        defer allocator.free(dev_path);
+
+        const sysfs_path = try fmt.allocPrint(
+            allocator,
+            "/sys/class/hidraw/hidraw{d}/device/uevent",
+            .{i},
+        );
+        defer allocator.free(sysfs_path);
+
+        var buffer: [1024]u8 = undefined;
+        const content = Io.Dir.cwd().readFile(
+            io,
+            sysfs_path,
+            &buffer,
+        ) catch continue;
+
+        if (mem.indexOf(
+            u8,
+            content,
+            "INNO TECH",
+        ) != null or
+            mem.indexOf(
+                u8,
+                content,
+                "0003:00000665:00005161",
+            ) != null)
+        {
+            return allocator.dupeZ(u8, dev_path);
+        }
+    }
+
+    return error.DeviceNotFound;
+}
+
 // Tests begin here
 
 test "open a hidraw device file descriptor" {
     const result = try openDevice("/dev/null");
 
-    try std.testing.expect(result == 3);
+    try testing.expect(result == 3);
 }
 
 test "openDevice fails when an unknown file descriptor is provided" {
     const result = openDevice("/dev/hidrawNaN");
 
-    try std.testing.expectError(
+    try testing.expectError(
         error.FileNotFound,
         result,
     );
@@ -154,14 +211,14 @@ test "openDevice fails when an unknown file descriptor is provided" {
 test "closeDevice fails with an invalid file descriptor" {
     const fake_fd: i32 = 9999;
 
-    try std.testing.expectError(
+    try testing.expectError(
         error.BadFileDescriptor,
         closeDevice(fake_fd),
     );
 }
 
 test "writePacket fails if trying to write to a bad file descriptor" {
-    try std.testing.expectError(
+    try testing.expectError(
         error.BadFileDescriptor,
         writePacket(
             -1,
@@ -172,11 +229,21 @@ test "writePacket fails if trying to write to a bad file descriptor" {
 
 test "readPacket fails if trying to read a bad file descriptor" {
     var buffer: [8]u8 = undefined;
-    try std.testing.expectError(
+    try testing.expectError(
         error.BadFileDescriptor,
         readPacket(
             -1,
             &buffer,
         ),
     );
+}
+
+test "discoverUPS returns a present UPS path when called" {
+    const allocator = testing.allocator;
+    const io = testing.io;
+
+    const result = try discoverUPS(allocator, io);
+    defer allocator.free(result);
+
+    try std.testing.expectEqualStrings("/dev/hidraw0", result);
 }
