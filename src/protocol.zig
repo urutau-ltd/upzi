@@ -117,6 +117,85 @@ pub fn sendCommand(fd: i32, cmd_str: []const u8) !void {
     }
 }
 
+/// Accumulate HID input packets until CR or retries are exhausted.
+/// The caller must provide a LINUX non-blocking hidraw descriptor, otherwise
+/// the `readPacket` function inside will block and the retry loop won't kick in.
+///
+/// The caller must also provide a caller-owned buffer. The response is written
+/// into `out`, `out` must outlive the returned slice, the `out.len` field is
+/// the maximum response size, a full buffer will return
+/// `error.ResponseTooLong`.
+///
+/// Mind that retry_sleep_ns is in nanoseconds and used only when `readPacket`
+/// returns no data, valid range for this is 0 <= n < 1_000_000_000. 0 means
+/// busy loop.
+///
+/// The returned slice includes the terminating `0x0D`.
+///
+/// If the loop ends with no bytes the function returns an `error.Timeout` or
+/// an `error.IncompleteResponse` if returned partial bytes and no CR is
+/// present. The loop ends when `max_retries` limit is reached, each iteration
+/// increments the retry counter, it doesn't matter if a packet arrived or if
+/// the call slept. Successful packet reads count too.
+pub fn readResponse(
+    fd: i32,
+    out: []u8,
+    max_retries: usize,
+    retry_sleep_ns: i64,
+) ![]const u8 {
+    var index: usize = 0;
+    var retry: usize = 0;
+
+    var packet_buf: [8]u8 = undefined;
+
+    const ts = linux.timespec{
+        .sec = 0,
+        .nsec = retry_sleep_ns,
+    };
+
+    while (retry < max_retries) : (retry += 1) {
+        if (try hidraw.readPacket(fd, &packet_buf)) |packet| {
+            for (packet.packet[0..packet.len]) |byte| {
+                if (index >= out.len) {
+                    return error.ResponseTooLong;
+                }
+                out[index] = byte;
+                index += 1;
+
+                if (byte == 0x0D) {
+                    return out[0..index];
+                }
+            }
+        } else {
+            var sl_res = linux.nanosleep(&ts, null);
+            var err = linux.errno(sl_res);
+
+            while (err != .SUCCESS) {
+                switch (err) {
+                    .INTR => {
+                        // Interrupted, retry
+                        sl_res = linux.nanosleep(&ts, null);
+                        err = linux.errno(sl_res);
+                        continue;
+                    },
+                    .TIMEDOUT => {
+                        return error.Timeout;
+                    },
+                    else => {
+                        return error.Unhandled;
+                    },
+                }
+            }
+        }
+    }
+
+    if (index == 0) {
+        return error.Timeout;
+    } else {
+        return error.IncompleteResponse;
+    }
+}
+
 /// Helper function to validate floats inside a response string.
 fn validUpsFloat(val: []const u8) !f32 {
     const result = try fmt.parseFloat(f32, val);
