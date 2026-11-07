@@ -31,11 +31,16 @@ pub fn main(init: std.process.Init) !void {
 
     if (opts.help) {
         try stdout.print("{s}\n", .{upzi.cli.USAGE});
+        try stdout.flush();
+        return;
     }
 
     if (opts.once) {
         const device_path = try upzi.hidraw.discoverUPS(arena, io);
         const device_fd = try upzi.hidraw.openDevice(device_path);
+        defer _ = upzi.hidraw.closeDevice(device_fd) catch |err| {
+            std.debug.print("Failed to close UPS device: {}!\n", .{err});
+        };
 
         const query = try upzi.ups.query(device_fd);
 

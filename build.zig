@@ -6,9 +6,11 @@ pub fn build(b: *std.Build) void {
 
     // Disable suppoort for other operating systems
     if (target.result.os.tag == .windows) {
-        @panic("Mocosoft Winbugs is not supported!");
-    } else if (target.result.os.tag == .macos) {
-        @panic("MacOS is not supported!");
+        @panic("Mocosoft Winbugs is ESPECIALLY not supported!");
+    }
+
+    if (target.result.os.tag != .linux) {
+        @panic("Only GNU/Linux-libre and GNU/Linux systems are supported!");
     }
 
     const build_options = b.addOptions();
@@ -26,6 +28,7 @@ pub fn build(b: *std.Build) void {
             .root_source_file = b.path("src/main.zig"),
             .target = target,
             .optimize = optimize,
+            .strip = true,
             .imports = &.{
                 .{ .name = "upzi", .module = mod },
             },

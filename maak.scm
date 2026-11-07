@@ -1,4 +1,4 @@
-;;; maak.scm --- Build automation for forge-cli using Maak
+;;; maak.scm --- Build automation for upzi using Maak
 ;;; -*- mode: scheme; -*-
 ;;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;; Copyright © 2026 Urutau-Ltd <softwarelibre@urutau-ltd.org>
@@ -22,7 +22,7 @@
 
 (define (test)
   "Run the test suite"
-  ($ '("zig" "build" "test")
+  ($ '("zig" "build" "test" "--summary" "all")
      #:verbose? #t))
 
 (define (build)

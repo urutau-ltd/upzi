@@ -14,7 +14,7 @@ pub fn query(fd: i32) !protocol.UpsStatus {
         20_000_000,
     );
 
-    const result = try protocol.parseQ1(response);
+    const result = try protocol.parseStatus(response);
     return result;
 }
 

@@ -1,5 +1,6 @@
 const std = @import("std");
 const mem = std.mem;
+const testing = std.testing;
 
 // Most code from here has been stolen from:
 // https://sl.urutau-ltd.org/urutau-ltd/forge-cli/src/branch/main/src/lib.zig
@@ -10,8 +11,9 @@ pub const USAGE =
     \\usage: upzi [OPTIONS]
     \\
     \\options:
-    \\  --once, -o     print the UPS status once, then exit.
-    \\  --version, v   print the version and exit.
+    \\  --once, -o      print the UPS status once, then exit.
+    \\  --version, -v   print the version and exit.
+    \\  --help, -h      print this help screen and exit.
 ;
 
 /// Represents a parsed collection of CLI arguments for post-processing
@@ -64,6 +66,8 @@ pub fn parseFlags(args: []const []const u8) !Options {
             opts.help = true;
         } else if (mem.eql(u8, arg, "--once") or mem.eql(u8, arg, "-o")) {
             opts.once = true;
+        } else if (arg.len > 0 and arg[0] == '-') {
+            return error.UnknownOption;
         } else {
             // Unrecognized flags or regular values are treated as positional
             // arguments
@@ -77,4 +81,71 @@ pub fn parseFlags(args: []const []const u8) !Options {
     }
 
     return opts;
+}
+
+// Tests begin here
+
+test "parseFlags should return the correct structure for --version" {
+    const args: []const []const u8 = &[_][]const u8{ "upzi", "--version" };
+    const opts = try parseFlags(args);
+
+    try testing.expectEqual(true, opts.version);
+    try testing.expectEqual(false, opts.once);
+    try testing.expectEqual(false, opts.help);
+    try testing.expectEqual(1, opts.positional_count);
+}
+
+test "parseFlags should return the correct structure for -v" {
+    const args: []const []const u8 = &[_][]const u8{ "upzi", "-v" };
+    const opts = try parseFlags(args);
+
+    try testing.expectEqual(true, opts.version);
+    try testing.expectEqual(false, opts.once);
+    try testing.expectEqual(false, opts.help);
+    try testing.expectEqual(1, opts.positional_count);
+}
+
+test "parseFlags should return the correct structure for --help or -h" {
+    const args: []const []const u8 = &[_][]const u8{ "upzi", "--help" };
+    const opts = try parseFlags(args);
+
+    try testing.expectEqual(true, opts.help);
+    try testing.expectEqual(false, opts.version);
+    try testing.expectEqual(false, opts.once);
+    try testing.expectEqual(1, opts.positional_count);
+}
+
+test "parseFlags should return the correct structure for -h" {
+    const args: []const []const u8 = &[_][]const u8{ "upzi", "-h" };
+    const opts = try parseFlags(args);
+
+    try testing.expectEqual(true, opts.help);
+    try testing.expectEqual(false, opts.version);
+    try testing.expectEqual(false, opts.once);
+    try testing.expectEqual(1, opts.positional_count);
+}
+
+test "parseFlags should return the correct structure for --once or -o" {
+    const args: []const []const u8 = &[_][]const u8{ "upzi", "--once" };
+    const opts = try parseFlags(args);
+
+    try testing.expectEqual(true, opts.once);
+    try testing.expectEqual(false, opts.help);
+    try testing.expectEqual(false, opts.version);
+    try testing.expectEqual(1, opts.positional_count);
+}
+
+test "parseFlags should return the correct structure for -o" {
+    const args: []const []const u8 = &[_][]const u8{ "upzi", "-o" };
+    const opts = try parseFlags(args);
+
+    try testing.expectEqual(true, opts.once);
+    try testing.expectEqual(false, opts.help);
+    try testing.expectEqual(false, opts.version);
+    try testing.expectEqual(1, opts.positional_count);
+}
+
+test "parseFlags should return error.UnknownOption for unrecognized flags" {
+    const args: []const []const u8 = &[_][]const u8{ "upzi", "--onve" };
+    try testing.expectError(error.UnknownOption, parseFlags(args));
 }

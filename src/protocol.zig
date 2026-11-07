@@ -193,8 +193,15 @@ fn validUpsFloat(val: []const u8) !f32 {
     return result;
 }
 
-/// Parse a raw Q1 response into a `UpsStatus` struct.
-pub fn parseQ1(response: []const u8) !UpsStatus {
+/// Parse a raw QS reply frame into a `UpsStatus` struct.
+/// The caller must provide the reply frame itself.
+///
+/// NOTE: Callerts must be aware that, if the temperature is missing on the
+/// provided reply frame (which is marked when the field itself sends a slice
+/// thats `--.-`) the function will actually return the `UpsStatus` value with
+/// the `temperature` field set to `0.0` which is not entirely true. How you
+/// deal with this result is up to you as a user of this library.
+pub fn parseStatus(response: []const u8) !UpsStatus {
     var sanitized_response = mem.trimEnd(
         u8,
         response,
@@ -288,10 +295,10 @@ test "sendCommand errors when using a bad file descriptor" {
     );
 }
 
-test "parseQ1 should succeed on a base valid response" {
+test "parseStatus should succeed on a base valid response" {
     const response = "(229.0 229.0 229.0 000 50.0 13.50 25.0 00000000\r";
 
-    const result = try parseQ1(response);
+    const result = try parseStatus(response);
 
     try std.testing.expectEqual(229.0, result.input_voltage);
     try std.testing.expectEqual(229.0, result.fault_voltage);
@@ -310,10 +317,10 @@ test "parseQ1 should succeed on a base valid response" {
     try std.testing.expectEqual(false, result.beeper_on);
 }
 
-test "parseQ1 should succeed on a second base valid response" {
+test "parseStatus should succeed on a second base valid response" {
     const response = "(230.0 230.0 230.0 100 60.0 13.5 30.0 10000000\r";
 
-    const result = try parseQ1(response);
+    const result = try parseStatus(response);
 
     try std.testing.expectEqual(230.0, result.input_voltage);
     try std.testing.expectEqual(230.0, result.fault_voltage);
@@ -332,9 +339,9 @@ test "parseQ1 should succeed on a second base valid response" {
     try std.testing.expectEqual(false, result.beeper_on);
 }
 
-test "parseQ1 should trim CRLF the same as CR" {
+test "parseStatus should trim CRLF the same as CR" {
     const response = "(229.0 229.0 229.0 000 50.0 13.50 25.0 00000000\r\n";
-    const result = try parseQ1(response);
+    const result = try parseStatus(response);
 
     try std.testing.expectEqual(229.0, result.input_voltage);
     try std.testing.expectEqual(229.0, result.fault_voltage);
@@ -353,9 +360,9 @@ test "parseQ1 should trim CRLF the same as CR" {
     try std.testing.expectEqual(false, result.beeper_on);
 }
 
-test "parseQ1 should allow if no terminator is present" {
+test "parseStatus should allow if no terminator is present" {
     const response = "(229.0 229.0 229.0 000 50.0 13.50 25.0 00000000";
-    const result = try parseQ1(response);
+    const result = try parseStatus(response);
 
     try std.testing.expectEqual(229.0, result.input_voltage);
     try std.testing.expectEqual(229.0, result.fault_voltage);
@@ -374,111 +381,111 @@ test "parseQ1 should allow if no terminator is present" {
     try std.testing.expectEqual(false, result.beeper_on);
 }
 
-test "parseQ1 should fail if no leading ( is present" {
+test "parseStatus should fail if no leading ( is present" {
     const response = "229.0 229.0 229.0 000 50.0 13.50 25.0 00000000\r";
     try std.testing.expectError(
         error.MissingLeadingByte,
-        parseQ1(response),
+        parseStatus(response),
     );
 }
 
-test "parseQ1 should fail if the indicator flags are incomplete" {
+test "parseStatus should fail if the indicator flags are incomplete" {
     const response = "(229.0 229.0 229.0 000 50.0 13.50 25.0 0000000\r";
     try std.testing.expectError(
         error.InvalidStatusIndicatorsLength,
-        parseQ1(response),
+        parseStatus(response),
     );
 }
 
-test "parseQ1 should fail if an invalid flag character is present" {
+test "parseStatus should fail if an invalid flag character is present" {
     const response = "(229.0 229.0 229.0 000 50.0 13.50 25.0 0000000X\r";
     try std.testing.expectError(
         error.InvalidStatusIndicatorFormat,
-        parseQ1(response),
+        parseStatus(response),
     );
 }
 
-test "parseQ1 should fail if a flag string is longer than expected" {
+test "parseStatus should fail if a flag string is longer than expected" {
     const response = "(229.0 229.0 229.0 000 50.0 13.50 25.0 000000000\r";
     try std.testing.expectError(
         error.InvalidStatusIndicatorsLength,
-        parseQ1(response),
+        parseStatus(response),
     );
 }
 
-test "parseQ1 should fail if the response contains an extra field" {
+test "parseStatus should fail if the response contains an extra field" {
     const response = "(229.0 229.0 229.0 000 50.0 13.50 25.0 00000000 extra\r";
     try std.testing.expectError(
         error.ExtraField,
-        parseQ1(response),
+        parseStatus(response),
     );
 }
 
-test "parseQ1 should fail if the voltage is wrong/impossible" {
+test "parseStatus should fail if the voltage is wrong/impossible" {
     const response = "(abc.0 229.0 229.0 000 50.0 13.50 25.0 00000000\r";
     try std.testing.expectError(
         error.InvalidCharacter,
-        parseQ1(response),
+        parseStatus(response),
     );
 }
 
-test "parseQ1 should fail if you overflow the u8" {
+test "parseStatus should fail if you overflow the u8" {
     const response = "(229.0 229.0 229.0 999999 50.0 13.50 25.0 00000000\r";
     try std.testing.expectError(
         error.Overflow,
-        parseQ1(response),
+        parseStatus(response),
     );
 }
 
-test "parseQ1 should fail if a bad float is provided" {
+test "parseStatus should fail if a bad float is provided" {
     const response = "(229.0 229.0 229.0 000 60,0 13.50 25.0 00000000\r";
     try std.testing.expectError(
         error.InvalidCharacter,
-        parseQ1(response),
+        parseStatus(response),
     );
 }
 
-test "parseQ1 should fail if an empty response is provided" {
+test "parseStatus should fail if an empty response is provided" {
     const response = "";
     try std.testing.expectError(
         error.EmptyResponse,
-        parseQ1(response),
+        parseStatus(response),
     );
 
     const response_r = "\r";
     try std.testing.expectError(
         error.EmptyResponse,
-        parseQ1(response_r),
+        parseStatus(response_r),
     );
 }
 
-test "parseQ1 should fail if the load is over 100%" {
+test "parseStatus should fail if the load is over 100%" {
     const response = "(229.0 229.0 229.0 101 50.0 13.50 25.0 00000000\r";
     try std.testing.expectError(
         error.InvalidLoadPercentage,
-        parseQ1(response),
+        parseStatus(response),
     );
 }
 
-test "parseQ1 should fail if for some magic reason an extra parentheses is present" {
+test "parseStatus should fail if for some magic reason an extra parentheses is present" {
     const response = "((229.0 229.0 229.0 100 50.0 13.50 25.0 00000000\r";
     try std.testing.expectError(
         error.BadFormat,
-        parseQ1(response),
+        parseStatus(response),
     );
 }
 
-test "parseQ1 should fail if for some magic reason a single parentheses response is present" {
+test "parseStatus should fail if for some magic reason a single parentheses response is present" {
     try std.testing.expectError(
         error.BadFormat,
-        parseQ1("("),
+        parseStatus("("),
     );
 }
 
-test "parseQ1 should fail if any float is 'nan' or 'inf'" {
+test "parseStatus should fail if any float is 'nan' or 'inf'" {
     const response = "(nan inf 229.0 100 50.0 13.50 25.0 00000000\r";
     try std.testing.expectError(
         error.InvalidUPSFloat,
-        parseQ1(response),
+        parseStatus(response),
     );
 }
