@@ -1,10 +1,12 @@
 # upzi
 
 Libre monitor for Koblenz and compatible UPS devices using the Megatec Q1
-protocol over USB HID. Reworked in zig.
+protocol over USB HID. Reworked in zig. More specifically
+the [Voltronic Power - 'QS' UPS communication protocols](https://networkupstools.org/protocols/voltronic-qs.html)
 
-No proprietary software required, should replace the bundled `ViewPower` that
-comes with some of these UPS devices, sadly, said software is nonfree.
+No proprietary software required, a future version should replace the bundled
+`ViewPower` that comes with some of these UPS devices, sadly, said software is
+nonfree.
 
 ## Supported Hardware
 
@@ -66,7 +68,6 @@ reproducible Guix package:
 ```bash
 $ guix build -f ./guix.scm
 ```
-
 
 ## Installation
 

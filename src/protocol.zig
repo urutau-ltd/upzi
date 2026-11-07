@@ -6,8 +6,9 @@ const linux = std.os.linux;
 const hidraw = @import("hidraw.zig");
 
 /// Hackers:
-/// This is the Megatec Q1 Protocol response parser.
+/// This is the Megatec Q1/QS Protocol response parser.
 /// https://networkupstools.org/protocols/megatec.html
+/// https://networkupstools.org/protocols/voltronic-qs.html
 ///
 /// Fields:
 ///   BBB.B - Input Voltage (V)
