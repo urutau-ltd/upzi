@@ -2,7 +2,6 @@ const std = @import("std");
 const mem = std.mem;
 const Allocator = mem.Allocator;
 const Io = std.Io;
-
 const build_options = @import("build_options");
 
 const upzi = @import("upzi");
@@ -35,7 +34,12 @@ pub fn main(init: std.process.Init) !void {
     }
 
     if (opts.once) {
-        @compileError("Implement me!");
+        const device_path = try upzi.hidraw.discoverUPS(arena, io);
+        const device_fd = try upzi.hidraw.openDevice(device_path);
+
+        const query = try upzi.ups.query(device_fd);
+
+        try upzi.ups.printStatus(stdout, query);
     }
 
     try stdout.flush();

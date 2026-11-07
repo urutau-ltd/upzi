@@ -60,14 +60,19 @@ pub fn closeDevice(fd: i32) !usize {
     return result;
 }
 
-/// Send an 8 byte HID report as: [first-byte 0 0 0 0 0 0 0 ]
-pub fn writePacket(fd: i32, first_byte: u8) !usize {
-    // Initialize a zero-filled array acting as a buffer.
-    // NOTE: It seems [8]u8 is invalid.
-    var buffer = [_]u8{0} ** PACKET_SIZE;
-    buffer[0] = first_byte;
+/// Send an 8 byte HID report as: [0 XX XX XX XX XX XX XX XX]. The leading zero
+/// is the HID report number.
+pub fn writePacket(fd: i32, bytes: *const [8]u8) !usize {
+    const BUFFER_SIZE: usize = 9;
 
-    var result = linux.write(fd, &buffer, PACKET_SIZE);
+    var buffer = [_]u8{0} ** BUFFER_SIZE;
+    buffer[0] = 0;
+
+    // Copy the bytes into the temporary buffer we do it from index 1 since
+    // we need the first byte to be always zero.
+    @memcpy(buffer[1..], bytes);
+
+    var result = linux.write(fd, &buffer, BUFFER_SIZE);
 
     var err = linux.errno(result);
 
@@ -75,7 +80,7 @@ pub fn writePacket(fd: i32, first_byte: u8) !usize {
         switch (err) {
             .INTR => {
                 // Interrupted, retry
-                result = linux.write(fd, &buffer, PACKET_SIZE);
+                result = linux.write(fd, &buffer, BUFFER_SIZE);
                 err = linux.errno(result);
                 continue;
             },
@@ -91,7 +96,7 @@ pub fn writePacket(fd: i32, first_byte: u8) !usize {
         }
     }
 
-    if (result != PACKET_SIZE) {
+    if (result != BUFFER_SIZE) {
         return error.ShortWrite;
     }
 
@@ -218,11 +223,12 @@ test "closeDevice fails with an invalid file descriptor" {
 }
 
 test "writePacket fails if trying to write to a bad file descriptor" {
+    const bytes = &[_]u8{ 'Q', '1', '\r', 0, 0, 0, 0, 0 };
     try testing.expectError(
         error.BadFileDescriptor,
         writePacket(
             -1,
-            'Q',
+            bytes,
         ),
     );
 }

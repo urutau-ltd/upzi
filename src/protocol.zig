@@ -81,39 +81,19 @@ pub const UpsStatus = struct {
     beeper_on: bool,
 };
 
-/// Send a command string to the UPS, one character per 8-byte HID packet.
-/// For the Megatec/Cypress protocol: each char should be sent as:
-/// [char 0 0 0 0 0 0 0].
+/// Send a command string to the UPS, 8 byte chunks per packet.
+/// For the Megatec/Cypress protocol each char should be sent as:
+/// [Q 1 \r 0 0 0 0 0].
 pub fn sendCommand(fd: i32, cmd_str: []const u8) !void {
-    const ts = linux.timespec{
-        .nsec = 2_000_000,
-        .sec = 0,
-    };
+    var offset: usize = 0;
 
-    for (cmd_str) |char| {
-        // TODO: This underscore represents the "sent bytes" but it's not
-        // proper for this library to print them? I'll figure out a way to
-        // reuse them later in the CLI.
-        _ = try hidraw.writePacket(fd, char);
+    while (offset < cmd_str.len) {
+        const n = @min(8, cmd_str.len - offset);
+        var report = [_]u8{0} ** 8;
 
-        // as in sleep_result?
-        var sl_res = linux.nanosleep(&ts, null);
-
-        var err = linux.errno(sl_res);
-
-        while (err != .SUCCESS) {
-            switch (err) {
-                .INTR => {
-                    // Interrupted, retry
-                    sl_res = linux.nanosleep(&ts, null);
-                    err = linux.errno(sl_res);
-                    continue;
-                },
-                else => {
-                    return error.Unhandled;
-                },
-            }
-        }
+        @memcpy(report[0..n], cmd_str[offset .. offset + n]);
+        _ = try hidraw.writePacket(fd, &report);
+        offset += n;
     }
 }
 
@@ -198,6 +178,11 @@ pub fn readResponse(
 
 /// Helper function to validate floats inside a response string.
 fn validUpsFloat(val: []const u8) !f32 {
+    // Temperature is a special case.
+    if (mem.eql(u8, val, "--.-")) {
+        return 0.0;
+    }
+
     const result = try fmt.parseFloat(f32, val);
 
     if (!std.math.isFinite(result)) {
