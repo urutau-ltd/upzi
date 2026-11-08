@@ -43,6 +43,7 @@ pub fn main(init: std.process.Init) !void {
 
         try stdout.print("Found UPS device: {s}\n", .{device_path});
         try stdout.flush();
+        return;
     }
 
     if (opts.json) {
@@ -84,6 +85,8 @@ pub fn main(init: std.process.Init) !void {
         const query = try upzi.ups.query(device_fd);
 
         try upzi.ups.printJSON(stdout, query);
+        try stdout.flush();
+        return;
     }
 
     if (opts.once) {

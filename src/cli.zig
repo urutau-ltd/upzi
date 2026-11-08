@@ -62,6 +62,10 @@ pub fn parseFlags(args: []const []const u8) !Options {
     var opts = Options{};
     var i: usize = 0;
 
+    if (args.len == 0) {
+        opts.help = true;
+    }
+
     while (i < args.len) : (i += 1) {
         const arg: []const u8 = args[i];
 
@@ -109,6 +113,18 @@ pub fn parseFlags(args: []const []const u8) !Options {
 }
 
 // Tests begin here
+
+test "no args should redirect to --help" {
+    const args: []const []const u8 = &[_][]const u8{};
+    const opts = try parseFlags(args);
+
+    try testing.expectEqual(0, opts.positional_count);
+    try testing.expectEqual(true, opts.help);
+    try testing.expectEqual(false, opts.json);
+    try testing.expectEqual(false, opts.list);
+    try testing.expectEqual(false, opts.once);
+    try testing.expectEqual(false, opts.version);
+}
 
 test "parseFlags should return the correct structure for --version" {
     const args: []const []const u8 = &[_][]const u8{ "upzi", "--version" };
@@ -166,7 +182,7 @@ test "parseFlags should return the correct structure for --once" {
     try testing.expectEqual(false, opts.help);
     try testing.expectEqual(false, opts.json);
     try testing.expectEqual(false, opts.version);
-    try testing.expectEqual(true, opts.list);
+    try testing.expectEqual(false, opts.list);
     try testing.expectEqual(true, opts.once);
 }
 

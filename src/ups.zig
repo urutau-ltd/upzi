@@ -30,13 +30,14 @@ pub fn printJSON(
         .{ .whitespace = .minified },
         writer,
     );
+    try writer.writeAll("\n");
 }
 
 pub fn printStatus(writer: *Io.Writer, s: protocol.UpsStatus) !void {
     try writer.print(
         \\
         \\ ┌─────────────────────────────┐
-        \\ │        ⚡️ UPZI - UPS        │
+        \\ │         UPZI - UPS          │
         \\ ├─────────────────────────────┤
         \\ │ Input voltage   {:7.1} V   │
         \\ │ Output voltage  {:7.1} V   │
@@ -45,10 +46,10 @@ pub fn printStatus(writer: *Io.Writer, s: protocol.UpsStatus) !void {
         \\ │ Frequency       {:7.1} Hz  │
         \\ │ Temperature     {:7.1} °C  │
         \\ ├─────────────────────────────┤
-        \\ │ AC Fail    {s:<5}             │
-        \\ │ Battery Lo {s:<5}             │
-        \\ │ Boost/Buck {s:<5}            │
-        \\ │ UPS Failed {s:<5}             │
+        \\ │ AC Fail     {s:<5}           │
+        \\ │ Battery Low {s:<5}           │
+        \\ │ Boost/Buck  {s:<5}           │
+        \\ │ UPS Failed  {s:<5}           │
         \\ └─────────────────────────────┘
         \\    
     ,
@@ -60,9 +61,9 @@ pub fn printStatus(writer: *Io.Writer, s: protocol.UpsStatus) !void {
             s.frequency,
             s.temperature,
             if (s.utility_fail) "YES" else "NO",
-            if (s.battery_low) "❗️" else "✅",
-            if (s.boost_buck) "YES" else "no",
-            if (s.ups_failed) "❗️" else "✅",
+            if (s.battery_low) "YES" else "NO",
+            if (s.boost_buck) "YES" else "NO",
+            if (s.ups_failed) "YES" else "NO",
         },
     );
 }
