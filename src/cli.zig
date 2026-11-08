@@ -14,6 +14,9 @@ pub const USAGE =
     \\  --once, -o      print the UPS status once, then exit.
     \\  --version, -v   print the version and exit.
     \\  --help, -h      print this help screen and exit.
+    \\
+    \\ Exit code 0 if everything ran successfully. 1 if there's a runtime/device
+    \\ failure. 2 for usage error.
 ;
 
 /// Represents a parsed collection of CLI arguments for post-processing
