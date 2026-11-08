@@ -1,5 +1,8 @@
 const std = @import("std");
 const Io = std.Io;
+const Allocator = std.mem.Allocator;
+const json = std.json;
+
 const protocol = @import("protocol.zig");
 
 pub fn query(fd: i32) !protocol.UpsStatus {
@@ -16,6 +19,17 @@ pub fn query(fd: i32) !protocol.UpsStatus {
 
     const result = try protocol.parseStatus(response);
     return result;
+}
+
+pub fn printJSON(
+    writer: *Io.Writer,
+    s: protocol.UpsStatus,
+) !void {
+    try json.Stringify.value(
+        s,
+        .{ .whitespace = .minified },
+        writer,
+    );
 }
 
 pub fn printStatus(writer: *Io.Writer, s: protocol.UpsStatus) !void {
@@ -45,7 +59,7 @@ pub fn printStatus(writer: *Io.Writer, s: protocol.UpsStatus) !void {
             s.load_percent,
             s.frequency,
             s.temperature,
-            if (s.utility_fail) "❗️" else "✅",
+            if (s.utility_fail) "YES" else "NO",
             if (s.battery_low) "❗️" else "✅",
             if (s.boost_buck) "YES" else "no",
             if (s.ups_failed) "❗️" else "✅",
