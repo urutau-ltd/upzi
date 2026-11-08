@@ -127,10 +127,10 @@ test "no args should redirect to --help" {
 }
 
 test "parseFlags should return the correct structure for --version" {
-    const args: []const []const u8 = &[_][]const u8{ "upzi", "--version" };
+    const args: []const []const u8 = &[_][]const u8{"--version"};
     const opts = try parseFlags(args);
 
-    try testing.expectEqual(1, opts.positional_count);
+    try testing.expectEqual(0, opts.positional_count);
     try testing.expectEqual(false, opts.help);
     try testing.expectEqual(false, opts.json);
     try testing.expectEqual(false, opts.list);
@@ -139,10 +139,10 @@ test "parseFlags should return the correct structure for --version" {
 }
 
 test "parseFlags should return the correct structure for -v" {
-    const args: []const []const u8 = &[_][]const u8{ "upzi", "-v" };
+    const args: []const []const u8 = &[_][]const u8{"-v"};
     const opts = try parseFlags(args);
 
-    try testing.expectEqual(1, opts.positional_count);
+    try testing.expectEqual(0, opts.positional_count);
     try testing.expectEqual(false, opts.help);
     try testing.expectEqual(false, opts.json);
     try testing.expectEqual(false, opts.list);
@@ -151,10 +151,10 @@ test "parseFlags should return the correct structure for -v" {
 }
 
 test "parseFlags should return the correct structure for --help" {
-    const args: []const []const u8 = &[_][]const u8{ "upzi", "--help" };
+    const args: []const []const u8 = &[_][]const u8{"--help"};
     const opts = try parseFlags(args);
 
-    try testing.expectEqual(1, opts.positional_count);
+    try testing.expectEqual(0, opts.positional_count);
     try testing.expectEqual(false, opts.json);
     try testing.expectEqual(false, opts.list);
     try testing.expectEqual(false, opts.once);
@@ -163,10 +163,10 @@ test "parseFlags should return the correct structure for --help" {
 }
 
 test "parseFlags should return the correct structure for -h" {
-    const args: []const []const u8 = &[_][]const u8{ "upzi", "-h" };
+    const args: []const []const u8 = &[_][]const u8{"-h"};
     const opts = try parseFlags(args);
 
-    try testing.expectEqual(1, opts.positional_count);
+    try testing.expectEqual(0, opts.positional_count);
     try testing.expectEqual(false, opts.json);
     try testing.expectEqual(false, opts.list);
     try testing.expectEqual(false, opts.once);
@@ -175,10 +175,10 @@ test "parseFlags should return the correct structure for -h" {
 }
 
 test "parseFlags should return the correct structure for --once" {
-    const args: []const []const u8 = &[_][]const u8{ "upzi", "--once" };
+    const args: []const []const u8 = &[_][]const u8{"--once"};
     const opts = try parseFlags(args);
 
-    try testing.expectEqual(1, opts.positional_count);
+    try testing.expectEqual(0, opts.positional_count);
     try testing.expectEqual(false, opts.help);
     try testing.expectEqual(false, opts.json);
     try testing.expectEqual(false, opts.version);
@@ -187,10 +187,10 @@ test "parseFlags should return the correct structure for --once" {
 }
 
 test "parseFlags should return the correct structure for -o" {
-    const args: []const []const u8 = &[_][]const u8{ "upzi", "-o" };
+    const args: []const []const u8 = &[_][]const u8{"-o"};
     const opts = try parseFlags(args);
 
-    try testing.expectEqual(1, opts.positional_count);
+    try testing.expectEqual(0, opts.positional_count);
     try testing.expectEqual(false, opts.help);
     try testing.expectEqual(false, opts.json);
     try testing.expectEqual(false, opts.list);
@@ -199,10 +199,10 @@ test "parseFlags should return the correct structure for -o" {
 }
 
 test "parseFlags should return the correct structure for --list" {
-    const args: []const []const u8 = &[_][]const u8{ "upzi", "--list" };
+    const args: []const []const u8 = &[_][]const u8{"--list"};
     const opts = try parseFlags(args);
 
-    try testing.expectEqual(1, opts.positional_count);
+    try testing.expectEqual(0, opts.positional_count);
     try testing.expectEqual(false, opts.help);
     try testing.expectEqual(false, opts.json);
     try testing.expectEqual(false, opts.once);
@@ -211,10 +211,10 @@ test "parseFlags should return the correct structure for --list" {
 }
 
 test "parseFlags should return the correct structure for -l" {
-    const args: []const []const u8 = &[_][]const u8{ "upzi", "-l" };
+    const args: []const []const u8 = &[_][]const u8{"-l"};
     const opts = try parseFlags(args);
 
-    try testing.expectEqual(1, opts.positional_count);
+    try testing.expectEqual(0, opts.positional_count);
     try testing.expectEqual(false, opts.help);
     try testing.expectEqual(false, opts.json);
     try testing.expectEqual(false, opts.once);
@@ -223,10 +223,10 @@ test "parseFlags should return the correct structure for -l" {
 }
 
 test "parseFlags should return the correct structure for --json" {
-    const args: []const []const u8 = &[_][]const u8{ "upzi", "--json" };
+    const args: []const []const u8 = &[_][]const u8{"--json"};
     const opts = try parseFlags(args);
 
-    try testing.expectEqual(1, opts.positional_count);
+    try testing.expectEqual(0, opts.positional_count);
     try testing.expectEqual(false, opts.help);
     try testing.expectEqual(false, opts.list);
     try testing.expectEqual(false, opts.once);

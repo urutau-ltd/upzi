@@ -54,7 +54,7 @@ pub const UpsStatus = struct {
     /// Temperature (in Celcius)
     /// NOTE: To library users, if translating to Spanish, please do not call
     /// these 'Centígrados', everytime you do so a ziguana dies of thirst.
-    temperature: f32,
+    temperature: ?f32,
 
     // Status bits
     /// AC Input Lost
@@ -179,11 +179,6 @@ pub fn readResponse(
 
 /// Helper function to validate floats inside a response string.
 fn validUpsFloat(val: []const u8) !f32 {
-    // Temperature is a special case.
-    if (mem.eql(u8, val, "--.-")) {
-        return 0.0;
-    }
-
     const result = try fmt.parseFloat(f32, val);
 
     if (!std.math.isFinite(result)) {
@@ -193,13 +188,21 @@ fn validUpsFloat(val: []const u8) !f32 {
     return result;
 }
 
+/// Helper function for optional floats that can be "--.-"
+fn optionalUpsFloat(val: []const u8) !?f32 {
+    if (mem.eql(u8, val, "--.-")) {
+        return null;
+    }
+    return try validUpsFloat(val);
+}
+
 /// Parse a raw QS reply frame into a `UpsStatus` struct.
 /// The caller must provide the reply frame itself.
 ///
-/// NOTE: Callerts must be aware that, if the temperature is missing on the
+/// NOTE: Callers must be aware that, if the temperature is missing on the
 /// provided reply frame (which is marked when the field itself sends a slice
-/// thats `--.-`) the function will actually return the `UpsStatus` value with
-/// the `temperature` field set to `0.0` which is not entirely true. How you
+/// that's `--.-`) the function will actually return the `UpsStatus` value with
+/// the `temperature` field set to `null`. How you
 /// deal with this result is up to you as a user of this library.
 pub fn parseStatus(response: []const u8) !UpsStatus {
     var sanitized_response = mem.trimEnd(
@@ -271,7 +274,7 @@ pub fn parseStatus(response: []const u8) !UpsStatus {
         .load_percent = load_percent,
         .frequency = try validUpsFloat(freq),
         .battery_voltage = try validUpsFloat(bat_v),
-        .temperature = try validUpsFloat(temp),
+        .temperature = try optionalUpsFloat(temp),
 
         // NOTE: true and false carry different meanings in the protocol itself
         // line_interactive and beeper on are descriptive. The rest raise some

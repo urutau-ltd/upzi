@@ -1,6 +1,8 @@
 const std = @import("std");
 const Io = std.Io;
 const Allocator = std.mem.Allocator;
+const testing = std.testing;
+const fmt = std.fmt;
 const json = std.json;
 
 const protocol = @import("protocol.zig");
@@ -34,6 +36,12 @@ pub fn printJSON(
 }
 
 pub fn printStatus(writer: *Io.Writer, s: protocol.UpsStatus) !void {
+    var temp_buf: [6]u8 = undefined;
+    const temp_str: []const u8 = if (s.temperature) |t|
+        try fmt.bufPrint(&temp_buf, "{d:.1}", .{t})
+    else
+        "--.-";
+
     try writer.print(
         \\
         \\ ┌─────────────────────────────┐
@@ -44,14 +52,14 @@ pub fn printStatus(writer: *Io.Writer, s: protocol.UpsStatus) !void {
         \\ │ Battery voltage {:7.1} V   │
         \\ │ Load            {:7}%    │
         \\ │ Frequency       {:7.1} Hz  │
-        \\ │ Temperature     {:7.1} °C  │
+        \\ │ Temperature     {s:>7} °C  │
         \\ ├─────────────────────────────┤
         \\ │ AC Fail     {s:<5}           │
         \\ │ Battery Low {s:<5}           │
         \\ │ Boost/Buck  {s:<5}           │
         \\ │ UPS Failed  {s:<5}           │
         \\ └─────────────────────────────┘
-        \\    
+        \\
     ,
         .{
             s.input_voltage,
@@ -59,7 +67,7 @@ pub fn printStatus(writer: *Io.Writer, s: protocol.UpsStatus) !void {
             s.battery_voltage,
             s.load_percent,
             s.frequency,
-            s.temperature,
+            temp_str,
             if (s.utility_fail) "YES" else "NO",
             if (s.battery_low) "YES" else "NO",
             if (s.boost_buck) "YES" else "NO",
@@ -69,7 +77,7 @@ pub fn printStatus(writer: *Io.Writer, s: protocol.UpsStatus) !void {
 }
 
 test "query should fail if an invalid file descriptor is provided" {
-    try std.testing.expectError(
+    try testing.expectError(
         error.BadFileDescriptor,
         query(-1),
     );

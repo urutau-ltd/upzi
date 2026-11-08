@@ -2,6 +2,9 @@ const std = @import("std");
 const mem = std.mem;
 const Allocator = mem.Allocator;
 const Io = std.Io;
+
+const fatal = std.process.fatal;
+
 const build_options = @import("build_options");
 
 const upzi = @import("upzi");
@@ -41,7 +44,7 @@ pub fn main(init: std.process.Init) !void {
             return;
         };
 
-        try stdout.print("Found UPS device: {s}\n", .{device_path});
+        try stdout.print("{s}\n", .{device_path});
         try stdout.flush();
         return;
     }
