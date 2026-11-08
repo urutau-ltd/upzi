@@ -36,8 +36,35 @@ pub fn main(init: std.process.Init) !void {
     }
 
     if (opts.once) {
-        const device_path = try upzi.hidraw.discoverUPS(arena, io);
-        const device_fd = try upzi.hidraw.openDevice(device_path);
+        const device_path = upzi.hidraw.discoverUPS(arena, io) catch {
+            std.debug.print("No 0665:5161 device found; check lsusb\n", .{});
+            return;
+        };
+        const device_fd = upzi.hidraw.openDevice(device_path) catch |err| {
+            switch (err) {
+                error.AccessDenied => {
+                    std.debug.print(
+                        "Wrong permissions to open {s}, check your udev rules!\n",
+                        .{device_path},
+                    );
+                    return;
+                },
+                error.FileNotFound => {
+                    std.debug.print(
+                        "Device {s} was not found mounted or was disconnected!\n",
+                        .{device_path},
+                    );
+                    return;
+                },
+                else => {
+                    std.debug.print(
+                        "Unhandled error {}, please send it to the maintainers!\n",
+                        .{err},
+                    );
+                    return;
+                },
+            }
+        };
         defer _ = upzi.hidraw.closeDevice(device_fd) catch |err| {
             std.debug.print("Failed to close UPS device: {}!\n", .{err});
         };
