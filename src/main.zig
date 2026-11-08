@@ -35,6 +35,16 @@ pub fn main(init: std.process.Init) !void {
         return;
     }
 
+    if (opts.list) {
+        const device_path = upzi.hidraw.discoverUPS(arena, io) catch {
+            std.debug.print("No 0665:5161 device found; check lsusb\n", .{});
+            return;
+        };
+
+        try stdout.print("Found UPS device: {s}\n", .{device_path});
+        try stdout.flush();
+    }
+
     if (opts.once) {
         const device_path = upzi.hidraw.discoverUPS(arena, io) catch {
             std.debug.print("No 0665:5161 device found; check lsusb\n", .{});

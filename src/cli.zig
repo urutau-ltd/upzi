@@ -11,6 +11,7 @@ pub const USAGE =
     \\usage: upzi [OPTIONS]
     \\
     \\options:
+    \\  --list, -l      list discoverable UPS devices.
     \\  --once, -o      print the UPS status once, then exit.
     \\  --version, -v   print the version and exit.
     \\  --help, -h      print this help screen and exit.
@@ -28,6 +29,10 @@ pub const Options = struct {
     /// Set when --help/-h is passed, main prints the help screen and exits
     /// before doing anything else if this flag is passed.
     help: bool = false,
+
+    /// main lists all discover devices and returns the first discovered
+    /// UPS when this flag is passed as --list.
+    list: bool = false,
 
     /// main runs just one query and returns the UPS status when this flag
     /// is passed as --once.
@@ -67,8 +72,18 @@ pub fn parseFlags(args: []const []const u8) !Options {
             "-h",
         )) {
             opts.help = true;
-        } else if (mem.eql(u8, arg, "--once") or mem.eql(u8, arg, "-o")) {
+        } else if (mem.eql(u8, arg, "--once") or mem.eql(
+            u8,
+            arg,
+            "-o",
+        )) {
             opts.once = true;
+        } else if (mem.eql(u8, arg, "--list") or mem.eql(
+            u8,
+            arg,
+            "-l",
+        )) {
+            opts.list = true;
         } else if (arg.len > 0 and arg[0] == '-') {
             return error.UnknownOption;
         } else {
@@ -108,7 +123,7 @@ test "parseFlags should return the correct structure for -v" {
     try testing.expectEqual(1, opts.positional_count);
 }
 
-test "parseFlags should return the correct structure for --help or -h" {
+test "parseFlags should return the correct structure for --help" {
     const args: []const []const u8 = &[_][]const u8{ "upzi", "--help" };
     const opts = try parseFlags(args);
 
@@ -128,7 +143,7 @@ test "parseFlags should return the correct structure for -h" {
     try testing.expectEqual(1, opts.positional_count);
 }
 
-test "parseFlags should return the correct structure for --once or -o" {
+test "parseFlags should return the correct structure for --once" {
     const args: []const []const u8 = &[_][]const u8{ "upzi", "--once" };
     const opts = try parseFlags(args);
 
@@ -143,6 +158,28 @@ test "parseFlags should return the correct structure for -o" {
     const opts = try parseFlags(args);
 
     try testing.expectEqual(true, opts.once);
+    try testing.expectEqual(false, opts.help);
+    try testing.expectEqual(false, opts.version);
+    try testing.expectEqual(1, opts.positional_count);
+}
+
+test "parseFlags should return the correct structure for --list" {
+    const args: []const []const u8 = &[_][]const u8{ "upzi", "--list" };
+    const opts = try parseFlags(args);
+
+    try testing.expectEqual(true, opts.list);
+    try testing.expectEqual(false, opts.once);
+    try testing.expectEqual(false, opts.help);
+    try testing.expectEqual(false, opts.version);
+    try testing.expectEqual(1, opts.positional_count);
+}
+
+test "parseFlags should return the correct structure for -l" {
+    const args: []const []const u8 = &[_][]const u8{ "upzi", "-l" };
+    const opts = try parseFlags(args);
+
+    try testing.expectEqual(true, opts.list);
+    try testing.expectEqual(false, opts.once);
     try testing.expectEqual(false, opts.help);
     try testing.expectEqual(false, opts.version);
     try testing.expectEqual(1, opts.positional_count);
