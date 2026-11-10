@@ -1,6 +1,7 @@
 const std = @import("std");
 const mem = std.mem;
 const fmt = std.fmt;
+const testing = std.testing;
 const linux = std.os.linux;
 
 const hidraw = @import("hidraw.zig");
@@ -292,7 +293,7 @@ pub fn parseStatus(response: []const u8) !UpsStatus {
 
 // Tests begin here
 test "sendCommand errors when using a bad file descriptor" {
-    try std.testing.expectError(
+    try testing.expectError(
         error.BadFileDescriptor,
         sendCommand(-1, "Q"),
     );
@@ -303,21 +304,21 @@ test "parseStatus should succeed on a base valid response" {
 
     const result = try parseStatus(response);
 
-    try std.testing.expectEqual(229.0, result.input_voltage);
-    try std.testing.expectEqual(229.0, result.fault_voltage);
-    try std.testing.expectEqual(229.0, result.output_voltage);
-    try std.testing.expectEqual(0, result.load_percent);
-    try std.testing.expectEqual(50.0, result.frequency);
-    try std.testing.expectEqual(13.50, result.battery_voltage);
-    try std.testing.expectEqual(25.0, result.temperature);
-    try std.testing.expectEqual(false, result.utility_fail);
-    try std.testing.expectEqual(false, result.battery_low);
-    try std.testing.expectEqual(false, result.boost_buck);
-    try std.testing.expectEqual(false, result.ups_failed);
-    try std.testing.expectEqual(false, result.line_interactive);
-    try std.testing.expectEqual(false, result.test_in_progress);
-    try std.testing.expectEqual(false, result.shutdown_active);
-    try std.testing.expectEqual(false, result.beeper_on);
+    try testing.expectEqual(229.0, result.input_voltage);
+    try testing.expectEqual(229.0, result.fault_voltage);
+    try testing.expectEqual(229.0, result.output_voltage);
+    try testing.expectEqual(0, result.load_percent);
+    try testing.expectEqual(50.0, result.frequency);
+    try testing.expectEqual(13.50, result.battery_voltage);
+    try testing.expectEqual(25.0, result.temperature);
+    try testing.expectEqual(false, result.utility_fail);
+    try testing.expectEqual(false, result.battery_low);
+    try testing.expectEqual(false, result.boost_buck);
+    try testing.expectEqual(false, result.ups_failed);
+    try testing.expectEqual(false, result.line_interactive);
+    try testing.expectEqual(false, result.test_in_progress);
+    try testing.expectEqual(false, result.shutdown_active);
+    try testing.expectEqual(false, result.beeper_on);
 }
 
 test "parseStatus should succeed on a second base valid response" {
@@ -325,68 +326,68 @@ test "parseStatus should succeed on a second base valid response" {
 
     const result = try parseStatus(response);
 
-    try std.testing.expectEqual(230.0, result.input_voltage);
-    try std.testing.expectEqual(230.0, result.fault_voltage);
-    try std.testing.expectEqual(230.0, result.output_voltage);
-    try std.testing.expectEqual(100, result.load_percent);
-    try std.testing.expectEqual(60.0, result.frequency);
-    try std.testing.expectEqual(13.50, result.battery_voltage);
-    try std.testing.expectEqual(30.0, result.temperature);
-    try std.testing.expectEqual(true, result.utility_fail);
-    try std.testing.expectEqual(false, result.battery_low);
-    try std.testing.expectEqual(false, result.boost_buck);
-    try std.testing.expectEqual(false, result.ups_failed);
-    try std.testing.expectEqual(false, result.line_interactive);
-    try std.testing.expectEqual(false, result.test_in_progress);
-    try std.testing.expectEqual(false, result.shutdown_active);
-    try std.testing.expectEqual(false, result.beeper_on);
+    try testing.expectEqual(230.0, result.input_voltage);
+    try testing.expectEqual(230.0, result.fault_voltage);
+    try testing.expectEqual(230.0, result.output_voltage);
+    try testing.expectEqual(100, result.load_percent);
+    try testing.expectEqual(60.0, result.frequency);
+    try testing.expectEqual(13.50, result.battery_voltage);
+    try testing.expectEqual(30.0, result.temperature);
+    try testing.expectEqual(true, result.utility_fail);
+    try testing.expectEqual(false, result.battery_low);
+    try testing.expectEqual(false, result.boost_buck);
+    try testing.expectEqual(false, result.ups_failed);
+    try testing.expectEqual(false, result.line_interactive);
+    try testing.expectEqual(false, result.test_in_progress);
+    try testing.expectEqual(false, result.shutdown_active);
+    try testing.expectEqual(false, result.beeper_on);
 }
 
 test "parseStatus should trim CRLF the same as CR" {
     const response = "(229.0 229.0 229.0 000 50.0 13.50 25.0 00000000\r\n";
     const result = try parseStatus(response);
 
-    try std.testing.expectEqual(229.0, result.input_voltage);
-    try std.testing.expectEqual(229.0, result.fault_voltage);
-    try std.testing.expectEqual(229.0, result.output_voltage);
-    try std.testing.expectEqual(0, result.load_percent);
-    try std.testing.expectEqual(50.0, result.frequency);
-    try std.testing.expectEqual(13.50, result.battery_voltage);
-    try std.testing.expectEqual(25.0, result.temperature);
-    try std.testing.expectEqual(false, result.utility_fail);
-    try std.testing.expectEqual(false, result.battery_low);
-    try std.testing.expectEqual(false, result.boost_buck);
-    try std.testing.expectEqual(false, result.ups_failed);
-    try std.testing.expectEqual(false, result.line_interactive);
-    try std.testing.expectEqual(false, result.test_in_progress);
-    try std.testing.expectEqual(false, result.shutdown_active);
-    try std.testing.expectEqual(false, result.beeper_on);
+    try testing.expectEqual(229.0, result.input_voltage);
+    try testing.expectEqual(229.0, result.fault_voltage);
+    try testing.expectEqual(229.0, result.output_voltage);
+    try testing.expectEqual(0, result.load_percent);
+    try testing.expectEqual(50.0, result.frequency);
+    try testing.expectEqual(13.50, result.battery_voltage);
+    try testing.expectEqual(25.0, result.temperature);
+    try testing.expectEqual(false, result.utility_fail);
+    try testing.expectEqual(false, result.battery_low);
+    try testing.expectEqual(false, result.boost_buck);
+    try testing.expectEqual(false, result.ups_failed);
+    try testing.expectEqual(false, result.line_interactive);
+    try testing.expectEqual(false, result.test_in_progress);
+    try testing.expectEqual(false, result.shutdown_active);
+    try testing.expectEqual(false, result.beeper_on);
 }
 
 test "parseStatus should allow if no terminator is present" {
     const response = "(229.0 229.0 229.0 000 50.0 13.50 25.0 00000000";
     const result = try parseStatus(response);
 
-    try std.testing.expectEqual(229.0, result.input_voltage);
-    try std.testing.expectEqual(229.0, result.fault_voltage);
-    try std.testing.expectEqual(229.0, result.output_voltage);
-    try std.testing.expectEqual(0, result.load_percent);
-    try std.testing.expectEqual(50.0, result.frequency);
-    try std.testing.expectEqual(13.50, result.battery_voltage);
-    try std.testing.expectEqual(25.0, result.temperature);
-    try std.testing.expectEqual(false, result.utility_fail);
-    try std.testing.expectEqual(false, result.battery_low);
-    try std.testing.expectEqual(false, result.boost_buck);
-    try std.testing.expectEqual(false, result.ups_failed);
-    try std.testing.expectEqual(false, result.line_interactive);
-    try std.testing.expectEqual(false, result.test_in_progress);
-    try std.testing.expectEqual(false, result.shutdown_active);
-    try std.testing.expectEqual(false, result.beeper_on);
+    try testing.expectEqual(229.0, result.input_voltage);
+    try testing.expectEqual(229.0, result.fault_voltage);
+    try testing.expectEqual(229.0, result.output_voltage);
+    try testing.expectEqual(0, result.load_percent);
+    try testing.expectEqual(50.0, result.frequency);
+    try testing.expectEqual(13.50, result.battery_voltage);
+    try testing.expectEqual(25.0, result.temperature);
+    try testing.expectEqual(false, result.utility_fail);
+    try testing.expectEqual(false, result.battery_low);
+    try testing.expectEqual(false, result.boost_buck);
+    try testing.expectEqual(false, result.ups_failed);
+    try testing.expectEqual(false, result.line_interactive);
+    try testing.expectEqual(false, result.test_in_progress);
+    try testing.expectEqual(false, result.shutdown_active);
+    try testing.expectEqual(false, result.beeper_on);
 }
 
 test "parseStatus should fail if no leading ( is present" {
     const response = "229.0 229.0 229.0 000 50.0 13.50 25.0 00000000\r";
-    try std.testing.expectError(
+    try testing.expectError(
         error.MissingLeadingByte,
         parseStatus(response),
     );
@@ -394,7 +395,7 @@ test "parseStatus should fail if no leading ( is present" {
 
 test "parseStatus should fail if the indicator flags are incomplete" {
     const response = "(229.0 229.0 229.0 000 50.0 13.50 25.0 0000000\r";
-    try std.testing.expectError(
+    try testing.expectError(
         error.InvalidStatusIndicatorsLength,
         parseStatus(response),
     );
@@ -402,7 +403,7 @@ test "parseStatus should fail if the indicator flags are incomplete" {
 
 test "parseStatus should fail if an invalid flag character is present" {
     const response = "(229.0 229.0 229.0 000 50.0 13.50 25.0 0000000X\r";
-    try std.testing.expectError(
+    try testing.expectError(
         error.InvalidStatusIndicatorFormat,
         parseStatus(response),
     );
@@ -410,7 +411,7 @@ test "parseStatus should fail if an invalid flag character is present" {
 
 test "parseStatus should fail if a flag string is longer than expected" {
     const response = "(229.0 229.0 229.0 000 50.0 13.50 25.0 000000000\r";
-    try std.testing.expectError(
+    try testing.expectError(
         error.InvalidStatusIndicatorsLength,
         parseStatus(response),
     );
@@ -418,7 +419,7 @@ test "parseStatus should fail if a flag string is longer than expected" {
 
 test "parseStatus should fail if the response contains an extra field" {
     const response = "(229.0 229.0 229.0 000 50.0 13.50 25.0 00000000 extra\r";
-    try std.testing.expectError(
+    try testing.expectError(
         error.ExtraField,
         parseStatus(response),
     );
@@ -426,7 +427,7 @@ test "parseStatus should fail if the response contains an extra field" {
 
 test "parseStatus should fail if the voltage is wrong/impossible" {
     const response = "(abc.0 229.0 229.0 000 50.0 13.50 25.0 00000000\r";
-    try std.testing.expectError(
+    try testing.expectError(
         error.InvalidCharacter,
         parseStatus(response),
     );
@@ -434,7 +435,7 @@ test "parseStatus should fail if the voltage is wrong/impossible" {
 
 test "parseStatus should fail if you overflow the u8" {
     const response = "(229.0 229.0 229.0 999999 50.0 13.50 25.0 00000000\r";
-    try std.testing.expectError(
+    try testing.expectError(
         error.Overflow,
         parseStatus(response),
     );
@@ -442,7 +443,7 @@ test "parseStatus should fail if you overflow the u8" {
 
 test "parseStatus should fail if a bad float is provided" {
     const response = "(229.0 229.0 229.0 000 60,0 13.50 25.0 00000000\r";
-    try std.testing.expectError(
+    try testing.expectError(
         error.InvalidCharacter,
         parseStatus(response),
     );
@@ -450,13 +451,13 @@ test "parseStatus should fail if a bad float is provided" {
 
 test "parseStatus should fail if an empty response is provided" {
     const response = "";
-    try std.testing.expectError(
+    try testing.expectError(
         error.EmptyResponse,
         parseStatus(response),
     );
 
     const response_r = "\r";
-    try std.testing.expectError(
+    try testing.expectError(
         error.EmptyResponse,
         parseStatus(response_r),
     );
@@ -464,7 +465,7 @@ test "parseStatus should fail if an empty response is provided" {
 
 test "parseStatus should fail if the load is over 100%" {
     const response = "(229.0 229.0 229.0 101 50.0 13.50 25.0 00000000\r";
-    try std.testing.expectError(
+    try testing.expectError(
         error.InvalidLoadPercentage,
         parseStatus(response),
     );
@@ -472,14 +473,14 @@ test "parseStatus should fail if the load is over 100%" {
 
 test "parseStatus should fail if for some magic reason an extra parentheses is present" {
     const response = "((229.0 229.0 229.0 100 50.0 13.50 25.0 00000000\r";
-    try std.testing.expectError(
+    try testing.expectError(
         error.BadFormat,
         parseStatus(response),
     );
 }
 
 test "parseStatus should fail if for some magic reason a single parentheses response is present" {
-    try std.testing.expectError(
+    try testing.expectError(
         error.BadFormat,
         parseStatus("("),
     );
@@ -487,8 +488,107 @@ test "parseStatus should fail if for some magic reason a single parentheses resp
 
 test "parseStatus should fail if any float is 'nan' or 'inf'" {
     const response = "(nan inf 229.0 100 50.0 13.50 25.0 00000000\r";
-    try std.testing.expectError(
+    try testing.expectError(
         error.InvalidUPSFloat,
         parseStatus(response),
     );
+}
+
+test "validUpsFloat should return the corresponding slices to floats" {
+    const test_values = [_][]const u8{
+        "0.0",
+        "1.0",
+        "+1.0",
+        "-1.0",
+        "100",
+        "123456",
+        "-5000.0",
+        "0.1",
+        "-0.25",
+        "3.14159265",
+        "2.71828182",
+        "0.000001",
+    };
+    const expected_results = [_]f32{
+        0.0,
+        1.0,
+        1.0,
+        -1.0,
+        100.0,
+        123456.0,
+        -5000.0,
+        0.1,
+        -0.25,
+        3.14159265,
+        2.71828182,
+        0.000001,
+    };
+
+    // The test arrays must be the same length
+    try testing.expectEqual(test_values.len, expected_results.len);
+
+    for (0..test_values.len) |i| {
+        const value = test_values[i];
+        try testing.expectEqual(
+            validUpsFloat(value),
+            expected_results[i],
+        );
+    }
+}
+
+test "validUpsFloat should return an error with 'nan' or 'inf' as values" {
+    try testing.expectError(
+        error.InvalidUPSFloat,
+        validUpsFloat("nan"),
+    );
+    try testing.expectError(
+        error.InvalidUPSFloat,
+        validUpsFloat("inf"),
+    );
+}
+
+test "optionalUpsFloat should return null if '--.-' is passed" {
+    try testing.expectEqual(null, optionalUpsFloat("--.-"));
+}
+
+test "optionalUpsFloat should return a valid f32 if a correct float is passed" {
+    const test_values = [_][]const u8{
+        "0.0",
+        "1.0",
+        "+1.0",
+        "-1.0",
+        "100",
+        "123456",
+        "-5000.0",
+        "0.1",
+        "-0.25",
+        "3.14159265",
+        "2.71828182",
+        "0.000001",
+    };
+    const expected_results = [_]f32{
+        0.0,
+        1.0,
+        1.0,
+        -1.0,
+        100.0,
+        123456.0,
+        -5000.0,
+        0.1,
+        -0.25,
+        3.14159265,
+        2.71828182,
+        0.000001,
+    };
+
+    // The test arrays must be the same length
+    try testing.expectEqual(test_values.len, expected_results.len);
+
+    for (0..test_values.len) |i| {
+        const value = test_values[i];
+        try testing.expectEqual(
+            optionalUpsFloat(value),
+            expected_results[i],
+        );
+    }
 }

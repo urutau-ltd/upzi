@@ -2,6 +2,7 @@ const std = @import("std");
 const mem = std.mem;
 const Allocator = mem.Allocator;
 const Io = std.Io;
+const log = std.log;
 
 const fatal = std.process.fatal;
 
@@ -26,6 +27,8 @@ pub fn main(init: std.process.Init) !void {
     const args = (try minimal.args.toSlice(arena))[1..];
     const opts = try upzi.cli.parseFlags(args);
 
+    const verbose = opts.verbose;
+
     if (opts.version) {
         try stdout.print("upzi {s}\n", .{build_options.version});
         try stdout.flush();
@@ -40,9 +43,13 @@ pub fn main(init: std.process.Init) !void {
 
     if (opts.list) {
         const device_path = upzi.hidraw.discoverUPS(arena, io) catch {
-            std.debug.print("No 0665:5161 device found; check lsusb\n", .{});
-            return;
+            fatal("No 0665:5161 device found; check lsusb\n", .{});
         };
+
+        if (verbose) {
+            log.info("mode=list", .{});
+            log.info("found device: {s}", .{device_path});
+        }
 
         try stdout.print("{s}\n", .{device_path});
         try stdout.flush();
@@ -51,39 +58,43 @@ pub fn main(init: std.process.Init) !void {
 
     if (opts.json) {
         const device_path = upzi.hidraw.discoverUPS(arena, io) catch {
-            std.debug.print("No 0665:5161 device found; check lsusb\n", .{});
-            return;
+            fatal("No 0665:5161 device found; check lsusb\n", .{});
         };
 
         const device_fd = upzi.hidraw.openDevice(device_path) catch |err| {
             switch (err) {
                 error.AccessDenied => {
-                    std.debug.print(
+                    fatal(
                         "Wrong permissions to open {s}, check your udev rules!\n",
                         .{device_path},
                     );
-                    return;
                 },
                 error.FileNotFound => {
-                    std.debug.print(
+                    fatal(
                         "Device {s} was not found mounted or was disconnected!\n",
                         .{device_path},
                     );
-                    return;
                 },
                 else => {
-                    std.debug.print(
+                    fatal(
                         "Unhandled error {}, please send it to the maintainers!\n",
                         .{err},
                     );
-                    return;
                 },
             }
         };
 
         defer _ = upzi.hidraw.closeDevice(device_fd) catch |err| {
-            std.debug.print("Failed to close UPS device: {}!\n", .{err});
+            fatal("Failed to close UPS device: {}!\n", .{err});
         };
+
+        if (verbose) {
+            log.info("mode=json", .{});
+            log.info(
+                "device={s} fd={d}",
+                .{ device_path, device_fd },
+            );
+        }
 
         const query = try upzi.ups.query(device_fd);
 
@@ -94,38 +105,42 @@ pub fn main(init: std.process.Init) !void {
 
     if (opts.once) {
         const device_path = upzi.hidraw.discoverUPS(arena, io) catch {
-            std.debug.print("No 0665:5161 device found; check lsusb\n", .{});
-            return;
+            fatal("No 0665:5161 device found; check lsusb\n", .{});
         };
 
         const device_fd = upzi.hidraw.openDevice(device_path) catch |err| {
             switch (err) {
                 error.AccessDenied => {
-                    std.debug.print(
+                    fatal(
                         "Wrong permissions to open {s}, check your udev rules!\n",
                         .{device_path},
                     );
-                    return;
                 },
                 error.FileNotFound => {
-                    std.debug.print(
+                    fatal(
                         "Device {s} was not found mounted or was disconnected!\n",
                         .{device_path},
                     );
-                    return;
                 },
                 else => {
-                    std.debug.print(
+                    fatal(
                         "Unhandled error {}, please send it to the maintainers!\n",
                         .{err},
                     );
-                    return;
                 },
             }
         };
         defer _ = upzi.hidraw.closeDevice(device_fd) catch |err| {
-            std.debug.print("Failed to close UPS device: {}!\n", .{err});
+            fatal("Failed to close UPS device: {}!\n", .{err});
         };
+
+        if (verbose) {
+            log.info("mode=once", .{});
+            log.info(
+                "device={s} fd={d}",
+                .{ device_path, device_fd },
+            );
+        }
 
         const query = try upzi.ups.query(device_fd);
 

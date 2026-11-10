@@ -8,17 +8,19 @@ const testing = std.testing;
 // Feel free to improve, it might benefit both CLI's :)
 
 pub const USAGE =
-    \\usage: upzi [OPTIONS]
+    \\usage: upzi [OPTIONS] [ARGS]
     \\
     \\options:
-    \\  --list, -l      list discoverable UPS devices.
-    \\  --json          print the UPS status as JSON once, then exit.
-    \\  --once, -o      print the UPS status once, then exit.
-    \\  --version, -v   print the version and exit.
-    \\  --help, -h      print this help screen and exit.
+    \\
+    \\  --list, -l          list discoverable UPS devices.
+    \\  --json              print the UPS status as JSON once, then exit.
+    \\  --once, -o          print the UPS status once, then exit.
+    \\  --verbose, -vv      enable verbose output.
+    \\  --version, -v       print the version and exit.
+    \\  --help, -h          print this help screen and exit.
     \\
     \\ Exit code 0 if everything ran successfully. 1 if there's a runtime/device
-    \\ failure. 2 for usage error.
+    \\ failure.
 ;
 
 /// Represents a parsed collection of CLI arguments for post-processing
@@ -42,6 +44,10 @@ pub const Options = struct {
     /// main runs just one query and returns the UPS status when this flag
     /// is passed as --once.
     once: bool = false,
+
+    /// Set when --verbose/-vv is passed, main prints detailed operation
+    /// information, useful for runtime debugging.
+    verbose: bool = false,
 
     /// Represents the positional arguments for the CLI. We do not need more
     /// than 5 in the entire program's lifecycle AFAIK.
@@ -93,6 +99,12 @@ pub fn parseFlags(args: []const []const u8) !Options {
             "-l",
         )) {
             opts.list = true;
+        } else if (mem.eql(u8, arg, "--verbose") or mem.eql(
+            u8,
+            arg,
+            "-vv",
+        )) {
+            opts.verbose = true;
         } else if (mem.eql(u8, arg, "--json")) {
             opts.json = true;
         } else if (arg.len > 0 and arg[0] == '-') {
@@ -182,6 +194,7 @@ test "parseFlags should return the correct structure for --once" {
     try testing.expectEqual(false, opts.help);
     try testing.expectEqual(false, opts.json);
     try testing.expectEqual(false, opts.version);
+    try testing.expectEqual(false, opts.verbose);
     try testing.expectEqual(false, opts.list);
     try testing.expectEqual(true, opts.once);
 }
@@ -195,6 +208,7 @@ test "parseFlags should return the correct structure for -o" {
     try testing.expectEqual(false, opts.json);
     try testing.expectEqual(false, opts.list);
     try testing.expectEqual(false, opts.version);
+    try testing.expectEqual(false, opts.verbose);
     try testing.expectEqual(true, opts.once);
 }
 
@@ -207,6 +221,7 @@ test "parseFlags should return the correct structure for --list" {
     try testing.expectEqual(false, opts.json);
     try testing.expectEqual(false, opts.once);
     try testing.expectEqual(false, opts.version);
+    try testing.expectEqual(false, opts.verbose);
     try testing.expectEqual(true, opts.list);
 }
 
@@ -219,6 +234,7 @@ test "parseFlags should return the correct structure for -l" {
     try testing.expectEqual(false, opts.json);
     try testing.expectEqual(false, opts.once);
     try testing.expectEqual(false, opts.version);
+    try testing.expectEqual(false, opts.verbose);
     try testing.expectEqual(true, opts.list);
 }
 
@@ -231,7 +247,34 @@ test "parseFlags should return the correct structure for --json" {
     try testing.expectEqual(false, opts.list);
     try testing.expectEqual(false, opts.once);
     try testing.expectEqual(false, opts.version);
+    try testing.expectEqual(false, opts.verbose);
     try testing.expectEqual(true, opts.json);
+}
+
+test "parseFlags should return the correct structure for --verbose" {
+    const args: []const []const u8 = &[_][]const u8{"--verbose"};
+    const opts = try parseFlags(args);
+
+    try testing.expectEqual(0, opts.positional_count);
+    try testing.expectEqual(false, opts.help);
+    try testing.expectEqual(false, opts.json);
+    try testing.expectEqual(false, opts.list);
+    try testing.expectEqual(false, opts.once);
+    try testing.expectEqual(false, opts.version);
+    try testing.expectEqual(true, opts.verbose);
+}
+
+test "parseFlags should return the correct structure for -vv" {
+    const args: []const []const u8 = &[_][]const u8{"-vv"};
+    const opts = try parseFlags(args);
+
+    try testing.expectEqual(0, opts.positional_count);
+    try testing.expectEqual(false, opts.help);
+    try testing.expectEqual(false, opts.json);
+    try testing.expectEqual(false, opts.list);
+    try testing.expectEqual(false, opts.once);
+    try testing.expectEqual(false, opts.version);
+    try testing.expectEqual(true, opts.verbose);
 }
 
 test "parseFlags should return error.UnknownOption for unrecognized flags" {
