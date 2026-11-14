@@ -1,3 +1,8 @@
+//! This module contains the Megatec QS protocol definition, as well as
+//! several utilities to write, read and send packets to the UPS connected
+//! to the system. It's re-exported at `root.zig` and heavily depends on
+//! the hidraw module to operate.
+
 const std = @import("std");
 const mem = std.mem;
 const fmt = std.fmt;
@@ -7,7 +12,7 @@ const linux = std.os.linux;
 const hidraw = @import("hidraw.zig");
 
 /// Hackers:
-/// This is the Megatec Q1/QS Protocol response parser.
+/// This is the Megatec-family status frame, QS dialect response parser.
 /// https://networkupstools.org/protocols/megatec.html
 /// https://networkupstools.org/protocols/voltronic-qs.html
 ///
@@ -58,34 +63,65 @@ pub const UpsStatus = struct {
     temperature: ?f32,
 
     // Status bits
-    /// AC Input Lost
+
+    /// Utility input failed, the UPS is running on battery.
+    /// `false` means the utility is OK.
     utility_fail: bool,
 
-    /// Battery is low
+    /// Battery is below the 'normal' theshold.
+    /// `false` means the battery is NOT low. How much is left?
+    /// only Dennis Ritchie knows.
     battery_low: bool,
 
-    /// Boost/Buck is active
+    /// Boost/Buck is active (AVR)
+    ///
+    /// In UPS with AVR systems boost & buck are two core actions used to
+    /// correct the incoming AC power fluctuations and keep the connected
+    /// equipent on the UPS safe.
+    ///
+    /// When boost is active, it increases the output voltage.
+    ///
+    /// When buck is active it decreases the output voltage.
+    ///
+    /// `false` means neither is active.
     boost_buck: bool,
 
-    /// UPS Failure
+    /// UPS Failure, `true` means the UPS is damaged or something in there
+    /// is reporting a failure.
     ups_failed: bool,
 
-    /// Line interactive topolgy or standby
+    /// Reports if the UPS is line-interactive. Expect `true` here.
     line_interactive: bool,
 
-    /// UPS tests are running
+    /// UPS tests are running, these are self-tests/battery tests.
+    /// `false` means no self-tests are running at the time of
+    /// query.
     test_in_progress: bool,
 
-    /// Shutdown active
+    /// The shutdown timer/command is active. `false` means the timer
+    /// is inactive.
     shutdown_active: bool,
 
-    /// UPS beeper is on
+    /// If you hear the UPS beep you know this is set to `true` xD
     beeper_on: bool,
 };
 
 /// Send a command string to the UPS, 8 byte chunks per packet.
-/// For the Megatec/Cypress protocol each char should be sent as:
-/// [Q 1 \r 0 0 0 0 0].
+/// For the Megatec/Cypress protocol. The command is split into 8-byte chunks
+/// zero padded:
+///
+/// Example:
+///
+///```
+/// QS\r -> [Q S \r 0 0 0 0 0]
+///```
+///
+/// The caller must ensure the provided file descriptor is valid and that the
+/// command string sent is a correct packet slice: `[]const u8`.
+///
+/// TODO:
+/// - For later versions of the Zig API, this function should return a
+///   result that may (or may not) be useful for logging.
 pub fn sendCommand(fd: i32, cmd_str: []const u8) !void {
     var offset: usize = 0;
 
@@ -101,7 +137,8 @@ pub fn sendCommand(fd: i32, cmd_str: []const u8) !void {
 
 /// Accumulate HID input packets until CR or retries are exhausted.
 /// The caller must provide a LINUX non-blocking hidraw descriptor, otherwise
-/// the `readPacket` function inside will block and the retry loop won't kick in.
+/// the `readPacket` function inside will block and the retry loop won't
+/// kick in.
 ///
 /// The caller must also provide a caller-owned buffer. The response is written
 /// into `out`, `out` must outlive the returned slice, the `out.len` field is
@@ -178,7 +215,9 @@ pub fn readResponse(
     }
 }
 
-/// Helper function to validate floats inside a response string.
+/// This is used to validate some fields on the packets that shouldn't be
+/// 'nan' or 'inf' for any reason. I doubt it would happen but with computers
+/// you never know.
 fn validUpsFloat(val: []const u8) !f32 {
     const result = try fmt.parseFloat(f32, val);
 
@@ -189,7 +228,10 @@ fn validUpsFloat(val: []const u8) !f32 {
     return result;
 }
 
-/// Helper function for optional floats that can be "--.-"
+/// In the QS spec, some fields might return a string `--.-` if a certain
+/// measurement is unsupported/unavailable in the UPS. We need this to handle
+/// those cases. In my UPS unit, temperature is not available and it's reported
+/// like this.
 fn optionalUpsFloat(val: []const u8) !?f32 {
     if (mem.eql(u8, val, "--.-")) {
         return null;

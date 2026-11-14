@@ -1,3 +1,8 @@
+//! Hidraw device utilities for upzi.
+//!
+//! This module contains functions and utilities to interact, open and close
+//! /dev/hidrawN devices on GNU/Linux systems.
+
 const std = @import("std");
 const mem = std.mem;
 const posix = std.posix;
@@ -6,6 +11,7 @@ const linux = std.os.linux;
 const testing = std.testing;
 const Io = std.Io;
 
+/// 8-byte report. The write path adds a report-number byte (9 in total).
 pub const PACKET_SIZE = 8;
 
 /// Represents a response returned from the UPS protocol.
@@ -223,7 +229,7 @@ test "closeDevice fails with an invalid file descriptor" {
 }
 
 test "writePacket fails if trying to write to a bad file descriptor" {
-    const bytes = &[_]u8{ 'Q', '1', '\r', 0, 0, 0, 0, 0 };
+    const bytes = &[8]u8{ 'Q', 'S', '\r', 0, 0, 0, 0, 0 };
     try testing.expectError(
         error.BadFileDescriptor,
         writePacket(

@@ -50,14 +50,17 @@ pub fn printStatus(writer: *Io.Writer, s: protocol.UpsStatus) !void {
         \\ │ Input voltage   {:7.1} V   │
         \\ │ Output voltage  {:7.1} V   │
         \\ │ Battery voltage {:7.1} V   │
-        \\ │ Load            {:7}%    │
+        \\ │ UPS Load          {:7}%  │
         \\ │ Frequency       {:7.1} Hz  │
         \\ │ Temperature     {s:>7} °C  │
-        \\ ├─────────────────────────────┤
-        \\ │ AC Fail     {s:<5}           │
-        \\ │ Battery Low {s:<5}           │
-        \\ │ Boost/Buck  {s:<5}           │
-        \\ │ UPS Failed  {s:<5}           │
+        \\ ├────────────STATUS───────────┤
+        \\ │ Input Fail        {s:<5}     │
+        \\ │ Battery Low       {s:<5}     │
+        \\ │ Boost/Buck        {s:<5}     │
+        \\ │ Self-test         {s:<5}     │
+        \\ │ Shutdown pending? {s:<5}     │
+        \\ │ Beeper            {s:<5}     │
+        \\ │ UPS Fault         {s:<5}     │
         \\ └─────────────────────────────┘
         \\
     ,
@@ -71,6 +74,9 @@ pub fn printStatus(writer: *Io.Writer, s: protocol.UpsStatus) !void {
             if (s.utility_fail) "YES" else "NO",
             if (s.battery_low) "YES" else "NO",
             if (s.boost_buck) "YES" else "NO",
+            if (s.test_in_progress) "YES" else "NO",
+            if (s.shutdown_active) "YES" else "NO",
+            if (s.beeper_on) "ON" else "OFF",
             if (s.ups_failed) "YES" else "NO",
         },
     );

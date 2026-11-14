@@ -16,3 +16,4 @@ docgen_tmp/
 *.scm#*
 .#*.scm
 
+.nrepl-port

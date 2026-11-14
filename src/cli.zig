@@ -1,3 +1,10 @@
+//! Command line utilities for this tool.
+//!
+//! This module contains several utilities to parse command line flags and
+//! positional arguments from the implementation. They are re-exported by
+//! root.zig but it's not really expected that anyone uses them outside
+//! upzi.
+
 const std = @import("std");
 const mem = std.mem;
 const testing = std.testing;
