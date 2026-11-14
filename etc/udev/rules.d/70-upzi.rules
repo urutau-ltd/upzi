@@ -1,0 +1,2 @@
+# INNO TECH / Cypress 0665:5161 UPS over hidraw
+SUBSYSTEM=="hidraw",ATTRS{idVendor}=="0665",ATTRS{idProduct}=="5161",TAG+="uaccess"
