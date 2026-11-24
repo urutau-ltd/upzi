@@ -15,20 +15,20 @@
 (define-module (maak)
   #:declarative? #t
   #:use-module (maak maak)
-  #:use-module (ice-9 ftw))
+  #:use-module (maak zig))
 
 (define project-name
   'upzi)
 
 (define (test)
   "Run the test suite"
-  ($ '("zig" "build" "test" "--summary" "all")
-     #:verbose? #t))
+  (zig-build "test" "--summary" "all"))
 
 (define (build)
   "Build the project executable"
-  ($ '("zig" "build" "-Doptimize=ReleaseSafe")
-     #:verbose? #t))
+  (run (zig-build-argv '()
+                       #:optimize "ReleaseSafe"
+                       #:verbose? #t)))
 
 (define (build-test)
   "Test if the project compiles"
