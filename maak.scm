@@ -15,6 +15,9 @@
 (define-module (maak)
   #:declarative? #t
   #:use-module (maak maak)
+  ;; `run' below is a task, so the executor it shadows is imported with a
+  ;; prefix for the tasks that still need to execute an argv.
+  #:use-module ((maak dsl) #:prefix dsl:)
   #:use-module (maak zig))
 
 (define project-name
@@ -26,19 +29,30 @@
 
 (define (build)
   "Build the project executable"
-  (run (zig-build-argv '()
-                       #:optimize "ReleaseSafe"
-                       #:verbose? #t)))
+  (dsl:run (zig-build-argv '()
+                           #:optimize "ReleaseSafe"
+                           #:verbose? #t)))
+
+(define (run . arguments)
+  "Run the application, passing ARGUMENTS to it"
+  (apply zig-build-run "--" arguments))
 
 (define (build-test)
   "Test if the project compiles"
-  ($ '("zig" "build" "run" "--" "--help")
-     #:verbose? #t))
+  (zig-build-run "--" "--help"))
+
+(define (fmt . paths)
+  "Format src and build.zig, or the PATHS given"
+  (apply zig-fmt (if (null? paths) '("src" "build.zig") paths)))
+
+(define (fmt-check)
+  "Check that src and build.zig are formatted"
+  (zig-fmt "--check" "src" "build.zig"))
 
 (define (clean)
   "Cleanup build artifacts"
-  ($ '("rm" "-rf" ".zig-cache" "zig-out")
-     #:verbose? #t))
+  (delete-file-recursively ".zig-cache")
+  (zig-build-clean))
 
 (define (default)
   (build-test))
