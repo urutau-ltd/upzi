@@ -20,7 +20,7 @@
 (define-public maak
   (package
     (name "maak")
-    (version "0.12.4")
+    (version "1.4.1")
     (source
      (origin
        (method git-fetch)
@@ -29,7 +29,7 @@
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1hglh7sakqxy71zlyxh8dpydwj7qdj69hzd9yzwyznyml2f0yqlf"))))
+        (base32 "1jw90v1i8yw2vll4pki2dnx3g0bxp9vr2264x7jq8j5mfrqn3b6p"))))
     (build-system guile-build-system)
     (arguments
      (list
@@ -75,7 +75,7 @@
                            "/share/bash-completion/completions" "maak"))))))))
     (native-inputs (list guile-3.0))
     (inputs (list guile-3.0 bash-minimal coreutils util-linux))
-    (home-page "https://codeberg.org/jjba23/maak")
+    (home-page "https://github.com/jjba23/maak")
     (synopsis "Command runner à la Make using Guile Scheme")
     (description
      "Maak is a command runner and control plane for your
@@ -85,7 +85,7 @@ your tasks, build steps, repetitive tasks or other automation.
 With Maak you can easily call external shell commands and integrate with
 your existing scripts and tools.  It is inspired by the GNU Make utility
 but it does away with a lot of the complexity that comes with its history.")
-    (license license:gpl3+)))
+    (license license:expat)))
 
 (concatenate-manifests
  (list (specifications->manifest (list "guile" "zig" "zig-zls"))
