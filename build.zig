@@ -13,6 +13,8 @@ pub fn build(b: *std.Build) void {
         @panic("Only GNU/Linux-libre and GNU/Linux systems are supported!");
     }
 
+    // TODO: I'm not closed to support BSD systems but I have none to test this.
+
     const build_options = b.addOptions();
     build_options.addOption([]const u8, "version", zon.version);
 
