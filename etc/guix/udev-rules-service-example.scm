@@ -20,11 +20,10 @@
 (define upzi-service
   (udev-rules-service
    'upzi
-   (list
-    (udev-rule
-     "70-upzi.rules"
-     (string-append
-      "SUBSYSTEM==\"hidraw\","
-      "ATTRS{idVendor}==\"0665\","
-      "ATTRS{idProduct}==\"5161\","
-      "TAG+=\"uaccess\"\n")))))
+   (udev-rule
+    "70-upzi.rules"
+    (string-append
+     "SUBSYSTEM==\"hidraw\","
+     "ATTRS{idVendor}==\"0665\","
+     "ATTRS{idProduct}==\"5161\","
+     "TAG+=\"uaccess\"\n"))))

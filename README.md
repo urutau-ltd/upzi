@@ -157,7 +157,7 @@ or install imperatively with:
 
 ```bash
 # Not recommended!
-$ guix install -f ./guix.scm
+$ guix package -f ./guix.scm
 ```
 
 ## Testing

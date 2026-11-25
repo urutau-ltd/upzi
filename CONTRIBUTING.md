@@ -1,9 +1,26 @@
 # Contributing to `upzi`
 
-TL;DR: Don't :s
-
 The guidelines are fairly simple. We use the latest `zig` version packaged by
 GNU Guix.
+
+Development takes place at: https://sl.urutau-ltd.org/urutau-ltd/upzi/
+
+Mirrors are present at:
+
+- [Codeberg](https://codeberg.org/urutau-ltd/upzi)
+- [GitHub](https://github.com/urutau-ltd/upzi)
+
+Issues and PR's are accepted in mirrors as well but milestones and versions
+are crafted at our forgejo instance. If you wish to contribute, do so in a new
+branch based on the latest `vX.X.X-dev`.
+
+## Guix System first
+
+This project is thought and tested on a GNU Guix operating system. Thus, first
+class suport is granted for it, as well as `udev` rules, services and more.
+
+Nix may be supported but I'm not experienced enough to package this software
+for said distribution
 
 ## No LLM Contributions
 
