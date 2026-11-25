@@ -4,12 +4,10 @@ pub const protocol = @import("protocol.zig");
 pub const ups = @import("ups.zig");
 pub const cli = @import("cli.zig");
 
-// Make zig pick up the hidraw module tests
 test {
     _ = hidraw;
 }
 
-// Make zig pick up the protocol module tests
 test {
     _ = protocol;
 }
