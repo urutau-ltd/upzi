@@ -25,6 +25,8 @@
 (define project-name
   'upzi)
 
+(define remotes '("origin" "ro-mirror1" "ro-mirror2"))
+
 (define (test)
   "Run the test suite"
   (zig-build "test" "--summary" "all"))
@@ -55,6 +57,18 @@
   "Cleanup build artifacts"
   (delete-file-recursively ".zig-cache")
   (zig-build-clean))
+
+(define (push)
+  "Push a commit series to all remotes"
+  (for-each (lambda (remote)
+              (dsl:run (list "git" "push" remote)))
+            remotes))
+
+(define (push-tags)
+  "Push all tags to all remotes"
+  (for-each (lambda (remote)
+              (dsl:run (list "git" "push" remote "--tags")))
+            remotes))
 
 (define (default)
   (build-test))
