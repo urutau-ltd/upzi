@@ -20,6 +20,8 @@
   #:use-module ((maak dsl) #:prefix dsl:)
   #:use-module (maak zig))
 
+(quiet? #t)
+
 (define project-name
   'upzi)
 
