@@ -42,7 +42,11 @@ pub fn main(init: std.process.Init) !void {
     }
 
     if (opts.list) {
-        const device_path = upzi.hidraw.discoverUPS(arena, io) catch {
+        const device_path = upzi.hidraw.discoverUPS(
+            arena,
+            io,
+            upzi.hidraw.default_sysfs_root,
+        ) catch {
             fatal("No 0665:5161 device found; check lsusb\n", .{});
         };
 
@@ -57,7 +61,11 @@ pub fn main(init: std.process.Init) !void {
     }
 
     if (opts.json) {
-        const device_path = upzi.hidraw.discoverUPS(arena, io) catch {
+        const device_path = upzi.hidraw.discoverUPS(
+            arena,
+            io,
+            upzi.hidraw.default_sysfs_root,
+        ) catch {
             fatal("No 0665:5161 device found; check lsusb\n", .{});
         };
 
@@ -104,7 +112,11 @@ pub fn main(init: std.process.Init) !void {
     }
 
     if (opts.once) {
-        const device_path = upzi.hidraw.discoverUPS(arena, io) catch {
+        const device_path = upzi.hidraw.discoverUPS(
+            arena,
+            io,
+            upzi.hidraw.default_sysfs_root,
+        ) catch {
             fatal("No 0665:5161 device found; check lsusb\n", .{});
         };
 

@@ -14,6 +14,10 @@ const Io = std.Io;
 /// 8-byte report. The write path adds a report-number byte (9 in total).
 pub const PACKET_SIZE = 8;
 
+/// Default 'root' for the CLI. Do not use this in tests, those should pass on
+/// their own.
+pub const default_sysfs_root = "/sys/class";
+
 /// Represents a response returned from the UPS protocol.
 pub const MegatecResponse = struct {
     /// The octect vector response itself.
@@ -158,7 +162,11 @@ pub fn readPacket(fd: i32, buffer: *[8]u8) !?MegatecResponse {
 /// the caller should handle. Right now the discovery capabilities are very
 /// limited and it only searches for `INNO TECH` present in the device name
 /// and a specific HID ID. Support for more devices is always welcome.
-pub fn discoverUPS(allocator: mem.Allocator, io: std.Io) ![:0]u8 {
+pub fn discoverUPS(
+    allocator: mem.Allocator,
+    io: std.Io,
+    root: []const u8,
+) ![:0]u8 {
     var i: usize = 0;
 
     while (i < 32) : (i += 1) {
@@ -172,8 +180,8 @@ pub fn discoverUPS(allocator: mem.Allocator, io: std.Io) ![:0]u8 {
 
         const sysfs_path = try fmt.allocPrint(
             allocator,
-            "/sys/class/hidraw/hidraw{d}/device/uevent",
-            .{i},
+            "{s}/hidraw/hidraw{d}/device/uevent",
+            .{ root, i },
         );
         defer allocator.free(sysfs_path);
 
@@ -251,12 +259,32 @@ test "readPacket fails if trying to read a bad file descriptor" {
     );
 }
 
-test "discoverUPS returns a present UPS path" {
+test "discoverUPS reads a fake sysfs tree" {
     const allocator = testing.allocator;
     const io = testing.io;
 
-    const result = try discoverUPS(allocator, io);
+    var tmp = testing.tmpDir(.{});
+    defer tmp.cleanup();
+
+    try tmp.dir.createDirPath(io, "hidraw/hidraw0/device");
+
+    // Mock a hidraw device by creating a puppet with the metadata the discovery
+    // function expects.
+    try tmp.dir.writeFile(io, .{
+        .sub_path = "hidraw/hidraw0/device/uevent",
+        .data = "HID_NAME=INNO TECH USB to Serial\n",
+    });
+
+    const pseudo_root = try fmt.allocPrint(
+        allocator,
+        ".zig-cache/tmp/{s}",
+        .{tmp.sub_path[0..]},
+    );
+
+    defer allocator.free(pseudo_root);
+
+    const result = try discoverUPS(allocator, io, pseudo_root);
     defer allocator.free(result);
 
-    try std.testing.expectEqualStrings("/dev/hidraw0", result);
+    try testing.expectEqualStrings("/dev/hidraw0", result);
 }

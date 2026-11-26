@@ -34,10 +34,7 @@
                  #:recursive? #t
                  #:select? (git-predicate (dirname (current-filename)))))
     (build-system zig-build-system)
-    (arguments (list #:zig zig-0.16
-                     #:tests? #f ; Tests are disabled because I haven't
-                                 ; found a way to mock a UPS device.
-                     ))
+    (arguments (list #:zig zig-0.16))
     (home-page "https://sl.urutau-ltd.org/urutau-ltd/upzi")
     (synopsis "UPS Monitoring Toolkit")
     (description
