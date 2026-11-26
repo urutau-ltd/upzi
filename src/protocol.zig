@@ -341,6 +341,44 @@ test "sendCommand errors when using a bad file descriptor" {
     );
 }
 
+test "sendCommand should write 9-byte hidraw packet query" {
+    var fds: [2]i32 = undefined;
+
+    // I think this is dirty but it helps to avoid the `result` pattern I've
+    // been repeating.
+    if (linux.errno(linux.pipe2(&fds, .{
+        .NONBLOCK = true,
+    })) != .SUCCESS) {
+        return error.PipeFailed;
+    }
+
+    defer _ = linux.close(fds[0]);
+    defer _ = linux.close(fds[1]);
+
+    _ = try sendCommand(fds[1], "QS\r");
+
+    var result: [9]u8 = undefined;
+    const n = linux.read(fds[0], &result, result.len);
+
+    // Check if the data "arrived"
+    try testing.expectEqual(@as(usize, 9), n);
+    try testing.expectEqualSlices(
+        u8,
+        &.{
+            0,
+            'Q',
+            'S',
+            '\r',
+            0,
+            0,
+            0,
+            0,
+            0,
+        },
+        &result,
+    );
+}
+
 test "parseStatus should succeed on a base valid response" {
     const response = "(229.0 229.0 229.0 000 50.0 13.50 25.0 00000000\r";
 
@@ -633,4 +671,123 @@ test "optionalUpsFloat should return a valid f32 if a correct float is passed" {
             expected_results[i],
         );
     }
+}
+
+// Helper function to mock packet writing for tests
+fn mockWritePackets(fd: i32, bytes: []const u8) !void {
+    var offset: usize = 0;
+
+    while (offset < bytes.len) : (offset += 8) {
+        var packet = [_]u8{0} ** 8;
+
+        const n: usize = @min(8, bytes.len - offset);
+        @memcpy(packet[0..n], bytes[offset .. offset + n]);
+
+        const written = linux.write(fd, &packet, packet.len);
+
+        if (linux.errno(written) != .SUCCESS or written != packet.len) {
+            return error.WriteFailed;
+        }
+    }
+}
+
+test "readResponse succeeds when reading a valid QS query" {
+    var fds: [2]i32 = undefined;
+
+    if (linux.errno(linux.pipe2(
+        &fds,
+        .{ .NONBLOCK = true },
+    )) != .SUCCESS) {
+        return error.PipeFailed;
+    }
+
+    defer _ = linux.close(fds[0]);
+    defer _ = linux.close(fds[1]);
+
+    const response = "(229.0 229.0 229.0 000 50.0 13.50 25.0 00000000\r";
+    try mockWritePackets(fds[1], response);
+
+    var out: [64]u8 = undefined;
+    const result = try readResponse(
+        fds[0],
+        &out,
+        10,
+        1_000_000,
+    );
+
+    try testing.expectEqualStrings(response, result);
+}
+
+test "readResponse errors with Timeout when no byte is returned" {
+    var fds: [2]i32 = undefined;
+
+    if (linux.errno(linux.pipe2(
+        &fds,
+        .{ .NONBLOCK = true },
+    )) != .SUCCESS) {
+        return error.PipeFailed;
+    }
+
+    defer _ = linux.close(fds[0]);
+    defer _ = linux.close(fds[1]);
+
+    var out: [64]u8 = undefined;
+
+    try testing.expectError(error.Timeout, readResponse(
+        fds[0],
+        &out,
+        2,
+        1_000_000,
+    ));
+}
+
+test "readResponse errors with IncompleteResponse when incomplete reponses are received" {
+    var fds: [2]i32 = undefined;
+
+    if (linux.errno(linux.pipe2(
+        &fds,
+        .{ .NONBLOCK = true },
+    )) != .SUCCESS) {
+        return error.PipeFailed;
+    }
+
+    defer _ = linux.close(fds[0]);
+    defer _ = linux.close(fds[1]);
+
+    const response = "(229.0 229.0";
+    try mockWritePackets(fds[1], response);
+
+    var out: [64]u8 = undefined;
+
+    try testing.expectError(error.IncompleteResponse, readResponse(
+        fds[0],
+        &out,
+        2,
+        1_000_000,
+    ));
+}
+
+test "readResponse errors with ResponseTooLong if the response contains more bytes than the caller's" {
+    var fds: [2]i32 = undefined;
+
+    if (linux.errno(linux.pipe2(
+        &fds,
+        .{ .NONBLOCK = true },
+    )) != .SUCCESS) {
+        return error.PipeFailed;
+    }
+
+    defer _ = linux.close(fds[0]);
+    defer _ = linux.close(fds[1]);
+
+    const response = "(229.0 229.0";
+    try mockWritePackets(fds[1], response);
+
+    var out: [4]u8 = undefined;
+    try testing.expectError(error.ResponseTooLong, readResponse(
+        fds[0],
+        &out,
+        2,
+        1_000_000,
+    ));
 }

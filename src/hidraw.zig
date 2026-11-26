@@ -205,9 +205,10 @@ pub fn discoverUPS(allocator: mem.Allocator, io: std.Io) ![:0]u8 {
 // Tests begin here
 
 test "open a hidraw device file descriptor" {
-    const result = try openDevice("/dev/null");
+    const fd = try openDevice("/dev/null");
+    defer _ = closeDevice(fd) catch {};
 
-    try testing.expect(result == 3);
+    try testing.expect(fd >= 0);
 }
 
 test "openDevice fails when an unknown file descriptor is provided" {
@@ -250,7 +251,7 @@ test "readPacket fails if trying to read a bad file descriptor" {
     );
 }
 
-test "discoverUPS returns a present UPS path when called" {
+test "discoverUPS returns a present UPS path" {
     const allocator = testing.allocator;
     const io = testing.io;
 
