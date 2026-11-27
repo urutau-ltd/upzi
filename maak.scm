@@ -38,7 +38,7 @@
                            #:verbose? #t)))
 
 (define (run . arguments)
-  "Run the application, passing ARGUMENTS to it"
+  "Run the application, passing @var{arguments} to it"
   (apply zig-build-run "--" arguments))
 
 (define (build-test)
@@ -46,7 +46,7 @@
   (zig-build-run "--" "--help"))
 
 (define (fmt . paths)
-  "Format src and build.zig, or the PATHS given"
+  "Format src and build.zig, or the @var{paths} given"
   (apply zig-fmt (if (null? paths) '("src" "build.zig") paths)))
 
 (define (fmt-check)
