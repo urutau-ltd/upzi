@@ -29,6 +29,17 @@ pub fn main(init: std.process.Init) !void {
 
     const verbose = opts.verbose;
 
+    var disable_colour = opts.noColour;
+    const is_tty = Io.File.stdout().isTty(init.io) catch false;
+
+    if (init.environ_map.get("UPZI_NO_COLOUR")) |v| {
+        if (v.len != 0) {
+            disable_colour = true;
+        }
+    }
+
+    if (!is_tty) disable_colour = true;
+
     if (opts.version) {
         try stdout.print("upzi {s}\n", .{build_options.version});
         try stdout.flush();
@@ -156,7 +167,7 @@ pub fn main(init: std.process.Init) !void {
 
         const query = try upzi.ups.query(device_fd);
 
-        try upzi.ups.printStatus(stdout, query);
+        try upzi.ups.printStatus(stdout, query, disable_colour);
     }
 
     try stdout.flush();
