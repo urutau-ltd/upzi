@@ -36,6 +36,10 @@ pub fn main(init: std.process.Init) !void {
         if (v.len != 0) {
             disable_colour = true;
         }
+    } else if (init.environ_map.get("UPZI_NO_COLOR")) |v| {
+        if (v.len != 0) {
+            disable_colour = true;
+        }
     }
 
     if (!is_tty) disable_colour = true;
